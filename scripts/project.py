@@ -43,6 +43,12 @@ def status():
               'single_stdio_entrypoint': project['scripts'] == {'balatro-agent': 'balatro_agent.server:main'},
               'uv_lock_sha256': digest(ROOT / 'uv.lock'), 'fixed_downloads': cache,
               'live_game_verified': False}
+    from package_source import verify_launcher, verified_bundles
+    result['packaged_gui_launcher_verified'] = verify_launcher(ROOT)
+    try:
+        result['bundled_dependencies_verified'] = bool(verified_bundles(ROOT))
+    except (OSError,ValueError,KeyError):
+        result['bundled_dependencies_verified'] = False
     installation = ROOT / 'runs/checks/current-installation.json'
     if installation.exists():
         entries = json.loads(installation.read_text(encoding='utf-8-sig'))['installed_files']
@@ -101,7 +107,7 @@ def check(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['prepare', 'status', 'diagnose', 'configure-display', 'check', 'build', 'package', 'verify-package', 'update-mod', 'timings', 'audit'])
+    parser.add_argument('command', choices=['prepare', 'status', 'diagnose', 'configure-display', 'check', 'build', 'build-launcher', 'package', 'verify-package', 'verify-offline', 'update-mod', 'timings', 'audit'])
     parser.add_argument('--output')
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--console', choices=['hidden', 'visible'])
@@ -176,8 +182,15 @@ def main():
         return check(output)
     if args.command == 'build':
         return run_script('build_mod.py')
+    if args.command == 'build-launcher':
+        if os.name != 'nt':
+            raise RuntimeError('The GUI launcher build requires Windows')
+        return subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+            '-File', str(ROOT / 'scripts/build_launcher.ps1')], cwd=ROOT, check=False).returncode
     if args.command == 'package':
-        return run_script('package_source.py')
+        return run_script('package_source.py', *(('--review-dir', args.output) if args.output else ()))
+    if args.command == 'verify-offline':
+        return run_script('verify_offline.py', '--output', args.output or 'runs/checks/offline-preparation.json')
     return run_script('verify_source_candidate.py', '--output', output)
 
 

@@ -1,6 +1,6 @@
 {
   "type": "checked_local_source_candidate_not_published",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "files": [
     {
       "path": ".gitignore",
@@ -19,13 +19,18 @@
     },
     {
       "path": "Balatro Agent.cmd",
-      "sha256": "4826317712d496b95d8739a2a4600d5d8d4e97611955e8934b83bb04fc5b44ed",
-      "bytes": 224
+      "sha256": "6dbcb145589224293f15ccdab31201be011bb29c2b1606af0175777f6dfe75fd",
+      "bytes": 318
+    },
+    {
+      "path": "Balatro Agent.exe",
+      "sha256": "78cf98e5778af7986325353490af0e40f9f63547cd03c3af100715f1720da3f8",
+      "bytes": 9216
     },
     {
       "path": "config/dependencies.lock.json",
-      "sha256": "21f91fa0485b24e93097c2fbc82a863691b7027922bc9a0c111466e8b59eca1d",
-      "bytes": 1532
+      "sha256": "097b0af235646351c2bcc9903a887cec7d6b6b58e13402c7f21383501c71c41e",
+      "bytes": 2010
     },
     {
       "path": "config/game-lifecycle.example.json",
@@ -36,6 +41,11 @@
       "path": "config/mcp-client.example.json",
       "sha256": "7d0645b520f9eea6718bc5383e9a1fa11887d75bc8ed2647e55794653ab50e3e",
       "bytes": 211
+    },
+    {
+      "path": "config/runtime.lock.json",
+      "sha256": "bd8beeb7a01dfe9491cdf0d75f52eb3939e003a54157113b62ab8c6974a14b71",
+      "bytes": 22701
     },
     {
       "path": "config/startup-ui.example.json",
@@ -54,12 +64,12 @@
     },
     {
       "path": "docs/balatro-ai/maintenance.md",
-      "sha256": "f84c8f9d25bcd580aed37740204b51aa7228a0ccdef56efcb80a2056fd74c738",
-      "bytes": 8050
+      "sha256": "7aaeda3c4d37d29159922a495a94f961633530729359f1ad12d81e290af1b889",
+      "bytes": 10107
     },
     {
       "path": "docs/balatro-ai/model-client.md",
-      "sha256": "1004d3e4004650a6717ef98b55e9b65ecb07a0d5afb420f6a8a55b9c91f0b28e",
+      "sha256": "a3d55269d03da91848dcc1a7245c742711be7974f501f80f7388d0a2abf9d909",
       "bytes": 5950
     },
     {
@@ -89,13 +99,13 @@
     },
     {
       "path": "evidence/README.md",
-      "sha256": "75972491e6b57c04e753817c241bb1eff9873955c2b60af446b2a9e3d23f4323",
+      "sha256": "39eb9ccfb21c7bda90951f502f2ef02d962525d9b8d919b03bdc28ee7e1d8b4d",
       "bytes": 1303
     },
     {
       "path": "evidence/validation.json",
-      "sha256": "d3d6276fc1b19798b2862c4b924df1594920e17ffe59e16ea640b1d91943277e",
-      "bytes": 23884
+      "sha256": "8224e989f3a94efbc67e980e69d74c3b9e9d59d7a9a213ce527b0a16aa90334e",
+      "bytes": 26344
     },
     {
       "path": "experience/experience/EXP-CONDITIONAL-ENGINE/HEAD.json",
@@ -424,8 +434,8 @@
     },
     {
       "path": "PROJECT.md",
-      "sha256": "449bac765ab85c23e4b1fe984f2c9046471e15a3b5b5e4eef9378f861b94f019",
-      "bytes": 2056
+      "sha256": "52fa78f4215503a5cf8e996f71f5f0f3ada2d1a4f5d64289b5e885016072b500",
+      "bytes": 2612
     },
     {
       "path": "prompts/bootstrap.md",
@@ -444,13 +454,13 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "5b5a26b63072f23b6b1c7ef466a064a6dea697d7377ecb61473d86e99f36f87f",
+      "sha256": "53e47fbb5a4e544f0428d129f5b86a98f37067c1df7c741b26e6e2294c0add85",
       "bytes": 555
     },
     {
       "path": "README.md",
-      "sha256": "6609ffbe09ab7bcdaf698d0779cef891ed84d4477eda2bca78e56deac880cff9",
-      "bytes": 4264
+      "sha256": "39255da3f2fa8069d3872883972789655502f2d638c5b6b6f6dcbe0bf325e6aa",
+      "bytes": 4391
     },
     {
       "path": "scripts/analyze_timings.py",
@@ -464,8 +474,13 @@
     },
     {
       "path": "scripts/bootstrap_sources.py",
-      "sha256": "968cfdcdab2838c47140681b94b0ffbabb37a297962ebc053e51f6d4adeb4a38",
-      "bytes": 4554
+      "sha256": "458752eb5804b42fc49d019b4fa817315cbae331871a2d8749f88fedded41dec",
+      "bytes": 6699
+    },
+    {
+      "path": "scripts/build_launcher.ps1",
+      "sha256": "abab1a9d1d857fb6decfca20fc202d6d4cee525f2c5fb9ca4a27fd8cecb19a50",
+      "bytes": 4852
     },
     {
       "path": "scripts/build_mod.py",
@@ -494,8 +509,8 @@
     },
     {
       "path": "scripts/launcher.ps1",
-      "sha256": "15376d2faa4d94711c27251afd0507b6d4ae63037246fea8d6b21cf0f729b429",
-      "bytes": 11402
+      "sha256": "59b8a31affc11fff6b8f56b0b2efda1e4872c46e4785de54cc2eb5f661ab2400",
+      "bytes": 14873
     },
     {
       "path": "scripts/onboarding.py",
@@ -504,18 +519,18 @@
     },
     {
       "path": "scripts/package_source.py",
-      "sha256": "4f4ed445310e7d5298b846f24cd245f55e3f2eb483c5140aa21b440ee0b02f7a",
-      "bytes": 13569
+      "sha256": "9227e7711c1fb8b6493dbfc2fe1854e7c6f188e682a55349d50d35366b52e8c6",
+      "bytes": 19544
     },
     {
       "path": "scripts/project.py",
-      "sha256": "d4cd920594955f21576a1eb4e928257d4842689322de6bca2d16d80314c2b8ee",
-      "bytes": 9886
+      "sha256": "6e65b212045597f18c05901b58005afba384664c43a80f8f39d9c3d3194d54cd",
+      "bytes": 10807
     },
     {
       "path": "scripts/setup.ps1",
-      "sha256": "ef3be270d6cc40cc64e5605d4cd8be1d710daef58cdcb41588d32f242275461a",
-      "bytes": 16644
+      "sha256": "48ce49993b6ad32c46ba8559c47815b2a2a4f310670be9f3e23bd53595ce634c",
+      "bytes": 31673
     },
     {
       "path": "scripts/startup_display.py",
@@ -531,6 +546,11 @@
       "path": "scripts/update_mod.py",
       "sha256": "4acb878f025b04e415c1bbd356da9b45dc4fcfe925890b1937a302b6abb77037",
       "bytes": 11817
+    },
+    {
+      "path": "scripts/verify_offline.py",
+      "sha256": "a974bb52656b40aee6684d32566cef00f5f914a23ac0014181ca95521775a6af",
+      "bytes": 5505
     },
     {
       "path": "scripts/verify_source_candidate.py",
@@ -594,7 +614,7 @@
     },
     {
       "path": "src/balatro_agent/server.py",
-      "sha256": "4477e0072397fd8f7ed10e055f21f0f26430c2e9f3c27a29bdf6567f76b0f654",
+      "sha256": "b9e657fe7f11cd65a3d49d51f674323ffc97bec68a06c818edb1da624717481a",
       "bytes": 10271
     },
     {
@@ -638,9 +658,19 @@
       "bytes": 2467
     },
     {
+      "path": "tests/test_bundles.py",
+      "sha256": "a79eb0f2162c93b7ced2b85e34ff61aba0acb71339518843030479475e0efb84",
+      "bytes": 5486
+    },
+    {
       "path": "tests/test_client_evidence.py",
       "sha256": "4bbe702495f9afbd96fbc0f6a332daeb85c3ac519a75b8db39d4c377bd01d52a",
       "bytes": 2422
+    },
+    {
+      "path": "tests/test_desktop.py",
+      "sha256": "b5a74e435ba24645c0088b7a5251a69099f5cf03c871b1ee93eb060d72bd4ccd",
+      "bytes": 5823
     },
     {
       "path": "tests/test_distribution.py",
@@ -689,8 +719,8 @@
     },
     {
       "path": "tests/test_onboarding.py",
-      "sha256": "2613576aca1005ffd84514d1b5091e2786fb4706f3dd80bee365756c71aca5bb",
-      "bytes": 18671
+      "sha256": "8b04071675d9932240298c52b1149eb5f9399d01730134b50157538b121f0971",
+      "bytes": 18665
     },
     {
       "path": "tests/test_progression.py",
@@ -714,8 +744,8 @@
     },
     {
       "path": "tests/test_source_delivery.py",
-      "sha256": "02740deb127e2f44cb61efd2be9bff8e84476ffbf2c3b26c359d09d2c3ba6433",
-      "bytes": 9350
+      "sha256": "5dbfbcfac59b8745ad62c41e3cd17951d7ae7a3457be4cba17c49265403e6712",
+      "bytes": 9408
     },
     {
       "path": "tests/test_startup_maintenance.py",
@@ -764,13 +794,68 @@
     },
     {
       "path": "third_party/NOTICE.md",
-      "sha256": "1e5d86c3bb0c2eef7b9d89d625edc9d73c1f82a9474f976bf976389496c27faf",
-      "bytes": 1508
+      "sha256": "9b8ce3cb489dd1ae19c56e52090f4b65cf56d3c76875588143465ec8ca32dfd1",
+      "bytes": 1920
+    },
+    {
+      "path": "third_party/uv-LICENSE-APACHE.txt",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357
+    },
+    {
+      "path": "third_party/uv-LICENSE-MIT.txt",
+      "sha256": "860e3d7a86b84e6a7012c7a635fc64df475cebc6cce34dfeb73a5982ec58176c",
+      "bytes": 1077
     },
     {
       "path": "uv.lock",
-      "sha256": "117af58f79cf9265e89ea87451d554e61e78e530e6a8b5c41cc7ac3bc923a346",
+      "sha256": "cc2b2cd5aca5f6907d129556a042cfca283ca9d6998d42428ee4600574ddd2ad",
       "bytes": 61065
+    },
+    {
+      "path": "vendor/balatrobot-9052d76.zip",
+      "sha256": "f1c3b2faaa9e19cbbaf13d3ead5ecc361912420abb2e8aba1084e9809db6044a",
+      "bytes": 275987
+    },
+    {
+      "path": "vendor/lovely-0.9.0.zip",
+      "sha256": "40b994a055ee75e5f2aba81e7ae06f2c17460e18cc346483089921899fadd1f7",
+      "bytes": 1641349
+    },
+    {
+      "path": "vendor/README.md",
+      "sha256": "264632168ddad0e126878f5898b87d04caaa09bc4f6e03cd754ae980e8331beb",
+      "bytes": 1531
+    },
+    {
+      "path": "vendor/runtime-windows-x64.zip",
+      "sha256": "c3d68739241fce03a8821fa5632ef59e4012706017de297b6752af880906f072",
+      "bytes": 37541819
+    },
+    {
+      "path": "vendor/steamodded-26.829.0.zip",
+      "sha256": "1ecb7015a29c29ef507f515076c9e8a7aeffaf18dae009645f8da7b4483322cf",
+      "bytes": 769317
+    },
+    {
+      "path": "vendor/uv-0.9.21.zip",
+      "sha256": "d27952e73183ef8f6ee8c2a50cf8b3f2e08e01b6a9279a00a85cb261ea8d8337",
+      "bytes": 21540977
+    },
+    {
+      "path": "windows/app.manifest",
+      "sha256": "ce1f3543bbe65053285de5d104f8580c3a2b0b636def0d387bc7fc971da330a8",
+      "bytes": 828
+    },
+    {
+      "path": "windows/launcher-build.json",
+      "sha256": "e8a28278f1f3464cea2db32d70006108662559deae8614c1670fd58dab7eb9c4",
+      "bytes": 763
+    },
+    {
+      "path": "windows/Launcher.cs",
+      "sha256": "5c9ebc4240d28ea4ca6bc4be4fe8b7ccff5a8213f4296b89e7c3d94524b64425",
+      "bytes": 3368
     }
   ],
   "license": "MIT_self_authored_only",

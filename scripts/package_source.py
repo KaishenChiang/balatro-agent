@@ -1,27 +1,113 @@
 """Export a checked, minimal source candidate; never publishes or pushes."""
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import stat
 import tomllib
 from zipfile import ZipFile, ZIP_DEFLATED
 import re
+import argparse
+import struct
 from bootstrap_sources import no_links, digest, unpack
 
 ROOT=Path(__file__).resolve().parents[1]
-TOP=['LICENSE','README.md','PROJECT.md','Install.cmd','Balatro Agent.cmd','pyproject.toml','uv.lock',
+TOP=['LICENSE','README.md','PROJECT.md','Install.cmd','Balatro Agent.cmd','Balatro Agent.exe','pyproject.toml','uv.lock',
      '.gitignore','.python-version','AGENTS.md']
-SCRIPTS=['setup.ps1','launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
-         'install_portable.py','update_mod.py','package_source.py','verify_source_candidate.py',
+SCRIPTS=['setup.ps1','launcher.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
+         'install_portable.py','update_mod.py','package_source.py','verify_source_candidate.py','verify_offline.py',
          'stdio_smoke.py','export_contract.py','check_notes_persistence.py',
          'audit_experience_mcp_evidence.py','client_evidence.py','project.py','analyze_timings.py']
 DOCS=['reference.md','maintenance.md','model-client.md',
       'observation-schema.json','action-schema.json','notes-schema.json','calculation-schema.json']
 
 
+def verified_bundles(root=ROOT):
+    """Whitelist only complete fixed public distributions, never local caches."""
+    paths=[root/'vendor/README.md',root/'config/runtime.lock.json']
+    component_lock=json.loads((root/'config/dependencies.lock.json').read_text(encoding='utf-8'))
+    link=component_lock['offline_runtime']
+    if link['manifest']!='config/runtime.lock.json' or link['sha256']!=digest(root/'config/runtime.lock.json'):
+        raise ValueError('Runtime manifest differs from the component lock')
+    for item in component_lock['sources']:
+        if Path(item['archive']).name!=item['archive'] or '\\' in item['archive'] or ':' in item['archive']:
+            raise ValueError('Unsafe bundled archive name')
+        path=root/'vendor'/item['archive'];no_links(path)
+        if digest(path)!=item['sha256']:
+            raise ValueError('Bundled fixed component differs from its lock')
+        paths.append(path)
+    manifest=json.loads((root/'config/runtime.lock.json').read_text(encoding='utf-8'))
+    if (manifest['schema']!='balatro-offline-runtime-1' or manifest['platform']!='windows-x86_64'
+            or manifest['python_version']!='3.13.11' or manifest['uv_version']!='0.9.21'
+            or manifest['archive']!='runtime-windows-x64.zip' or manifest['uv_lock_sha256']!=digest(root/'uv.lock')):
+        raise ValueError('Bundled runtime lock differs from the source')
+    archive=root/'vendor'/manifest['archive'];no_links(archive)
+    if digest(archive)!=manifest['sha256'] or archive.stat().st_size!=manifest['bytes']:
+        raise ValueError('Bundled runtime archive differs from its lock')
+    records=[manifest['python'],*manifest['wheels']]
+    names=[r['path'] for r in records]
+    if not 2<=len(names)<=80 or len(set(n.casefold() for n in names))!=len(names):
+        raise ValueError('Invalid bundled runtime member list')
+    for name in names:
+        path=PurePosixPath(name)
+        if path.is_absolute() or '..' in path.parts or '\\' in name or ':' in name or '\0' in name:
+            raise ValueError('Unsafe bundled runtime member')
+    locked={p['name']:p for p in tomllib.loads((root/'uv.lock').read_text(encoding='utf-8'))['package']}
+    for record in manifest['wheels']:
+        if not record['path'].startswith('wheels/') or not record['path'].endswith('.whl') or not record['license_files']:
+            raise ValueError('Invalid licensed runtime wheel')
+        package=locked.get(record['name'])
+        if package and (record['version']!=package['version'] or not any(
+                w['url']==record['url'] and w['hash']=='sha256:'+record['sha256'] for w in package['wheels'])):
+            raise ValueError('Bundled wheel differs from uv.lock')
+    with ZipFile(archive) as bundle:
+        if set(bundle.namelist())!=set(names) or len(bundle.infolist())!=len(names):
+            raise ValueError('Unregistered bundled runtime member')
+        if sum(e.file_size for e in bundle.infolist())>150_000_000:
+            raise ValueError('Bundled runtime exceeds size limit')
+        for record in records:
+            with bundle.open(record['path']) as stream:
+                if hashlib.file_digest(stream,'sha256').hexdigest()!=record['sha256']:
+                    raise ValueError('Bundled runtime member differs from its lock')
+            if bundle.getinfo(record['path']).file_size!=record['bytes']:
+                raise ValueError('Bundled runtime member size differs')
+    paths.append(archive)
+    return paths
+
+
+def verify_launcher(root=ROOT):
+    """Allow only the self-authored WinExe bound to its source/build receipt."""
+    try:
+        receipt_path=root/'windows/launcher-build.json'
+        no_links(receipt_path)
+        receipt=json.loads(receipt_path.read_text(encoding='utf-8'))
+        if receipt['schema']!='self-authored-launcher-1' or receipt['executable']!='Balatro Agent.exe':
+            return False
+        inputs={'source':'windows/Launcher.cs','app_manifest':'windows/app.manifest',
+                'build_script':'scripts/build_launcher.ps1'}
+        for key, relative in inputs.items():
+            path=root/relative; no_links(path)
+            if receipt[key]!=relative or digest(path)!=receipt[key+'_sha256']:
+                return False
+        executable=root/'Balatro Agent.exe'; no_links(executable)
+        if digest(executable)!=receipt['sha256'] or receipt['subsystem']!='windows_gui':
+            return False
+        version=tomllib.loads((root/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
+        if receipt['version']!=version+'.0' or receipt['license']!='MIT':
+            return False
+        data=executable.read_bytes(); offset=struct.unpack_from('<I',data,0x3c)[0]
+        return (data[:2]==b'MZ' and data[offset:offset+4]==b'PE\0\0'
+                and struct.unpack_from('<H',data,offset+4)[0]==0x8664
+                and struct.unpack_from('<H',data,offset+24+68)[0]==2)
+    except (OSError,ValueError,KeyError,struct.error):
+        return False
+
+
 def selected_files(root=ROOT, *, include_validation=True):
     """Explicit roots and file types; local history/runtime data is excluded."""
     selected=[root/name for name in TOP]
+    if not verify_launcher(root):
+        raise ValueError('Self-authored GUI launcher does not match its source/build receipt')
+    selected += [root/'windows'/name for name in ('Launcher.cs','app.manifest','launcher-build.json')]
     selected += [root/'scripts'/name for name in SCRIPTS]
     selected += [root/'docs/balatro-ai'/name for name in DOCS]
     selected += [root/'config'/name for name in ('dependencies.lock.json','game-lifecycle.example.json',
@@ -29,6 +115,8 @@ def selected_files(root=ROOT, *, include_validation=True):
     selected += [root/'prompts'/name for name in ('bootstrap.md','first-use.md','mcp-evidence.js')]
     selected += [root/'experience/README.md']
     selected += [root/'third_party'/name for name in ('NOTICE.md','balatrobot-LICENSE.txt','lovely-LICENSE.md')]
+    selected += [root/'third_party'/name for name in ('uv-LICENSE-MIT.txt','uv-LICENSE-APACHE.txt')]
+    selected += verified_bundles(root)
     selected += list((root/'src').rglob('*.py'))
     selected += list((root/'tests').glob('*.py'))+list((root/'tests/support').glob('*.lua'))
     selected += [p for p in (root/'mod').glob('*') if p.suffix in ('.lua','.patch','.json','.toml')]
@@ -43,7 +131,8 @@ def selected_files(root=ROOT, *, include_validation=True):
         relative=path.relative_to(root)
         if not path.is_file() or getattr(path.stat(),'st_file_attributes',0)&stat.FILE_ATTRIBUTE_REPARSE_POINT:
             raise ValueError('Missing or linked candidate file')
-        if any(p in ('.artifacts','.tools','.venv','__pycache__','runs','TEST') for p in relative.parts) or '.local.' in path.name or path.suffix.lower() in ('.jkr','.dll','.exe','.png'):
+        forbidden_binary=path.suffix.lower() in ('.jkr','.dll','.exe','.png') and relative.as_posix()!='Balatro Agent.exe'
+        if any(p in ('.artifacts','.tools','.venv','__pycache__','runs','TEST') for p in relative.parts) or '.local.' in path.name or forbidden_binary:
             raise ValueError('Forbidden source candidate content')
     return files
 
@@ -148,6 +237,7 @@ def require_source_check(root, version):
            and checks.get('tests',0)>0 and all(checks.get(k)==0 for k in ('failures','errors','skipped'))
            and status.get('single_stdio_entrypoint') is True
            and status.get('built_runtime_hashes_match') is True
+           and status.get('bundled_dependencies_verified') is True
            and bool(status.get('fixed_downloads'))
            and all(i.get('hash_match') is True for i in status['fixed_downloads'])
            and report.get('source_unchanged_during_check') is True)
@@ -163,10 +253,15 @@ def candidate_bytes(path,root=ROOT):
     return portable_guidelines(data) if path==root/'AGENTS.md' else data
 
 
-def main():
+def main(argv=None):
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--review-dir',default='deliverables/github-ready')
+    args=parser.parse_args(argv)
     version=tomllib.loads((ROOT/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
     report=require_source_check(ROOT,version)
-    review=ROOT/'deliverables/github-ready';no_links(review)
+    review=(ROOT/args.review_dir).absolute();no_links(review)
+    if '..' in review.parts or not review.is_relative_to(ROOT/'deliverables'):
+        raise ValueError('Review directory must stay inside deliverables')
     if review.exists():raise ValueError('github-ready already exists; preserve it and inspect before rebuilding')
     destination=ROOT/'deliverables/source';no_links(destination)
     archive=destination/('balatro-agent-'+version+'-source-candidate.zip');no_links(archive)
@@ -184,6 +279,7 @@ def main():
     validation={'evidence_type':'current_source_checks_not_live_game_acceptance','version':version,
         'synthetic':report['synthetic'],'development_stdio_exit_code':0,'development_tools':11,
         'fixed_downloads_verified':True,'minimal_mod_build_verified':True,
+        'bundled_distributions_verified':True,
         'current_version_real_game_verified':False,'historical_live_evidence':'history.json',
         'real_game_or_client_config_written':False,'published':False,
         'source_snapshot':[{'path':p.relative_to(ROOT).as_posix(),

@@ -1,0 +1,16 @@
+{
+    "schema":  "self-authored-launcher-1",
+    "source":  "windows/Launcher.cs",
+    "source_sha256":  "5c9ebc4240d28ea4ca6bc4be4fe8b7ccff5a8213f4296b89e7c3d94524b64425",
+    "app_manifest":  "windows/app.manifest",
+    "app_manifest_sha256":  "ce1f3543bbe65053285de5d104f8580c3a2b0b636def0d387bc7fc971da330a8",
+    "build_script":  "scripts/build_launcher.ps1",
+    "build_script_sha256":  "abab1a9d1d857fb6decfca20fc202d6d4cee525f2c5fb9ca4a27fd8cecb19a50",
+    "executable":  "Balatro Agent.exe",
+    "sha256":  "78cf98e5778af7986325353490af0e40f9f63547cd03c3af100715f1720da3f8",
+    "version":  "0.6.4.0",
+    "subsystem":  "windows_gui",
+    "byte_reproducible":  false,
+    "compiler":  "Windows .NET Framework csc",
+    "license":  "MIT"
+}

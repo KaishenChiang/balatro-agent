@@ -8,6 +8,8 @@
 - Lovely：ethangreen-dev/lovely-injector v0.9.0，MIT，许可见 `lovely-LICENSE.md`。使用该版本的 `version.dll`，不是后续 v0.10.0 的 `winmm.dll`。
 - Steamodded：Steamodded/smods，固定 26.829.0，GPL-3.0，未修改其源码；完整 `LICENSE` 随源码归档和安装目录保留。
 - 测试 JSON：rxi json.lua 0.1.2，MIT，来自固定 Steamodded 源码；完整许可在 `tests/support/json.lua` 文件头。
-- Python、uv、MCP、httpx 和锁定的传递依赖：采用官方发行；各发行的许可随隔离运行环境或源码保留。完整解析依赖见 `uv.lock`，当前版本及 SHA-256 见 `runs/checks/versions-20261004.json`，旧版本清单保留于本机历史。
+- uv：Astral v0.9.21，MIT或Apache-2.0，完整许可见 `uv-LICENSE-MIT.txt`、`uv-LICENSE-APACHE.txt`；原始Windows发行归档随vendor保留。
+- Python：Astral python-build-standalone提供的CPython 3.13.11、20251217构建。未修改原始发行归档，Python及其附带库的完整许可证保留在归档的LICENSE.txt与licenses目录中。
+- MCP、httpx和锁定的传递／构建依赖：vendor/runtime-windows-x64.zip内保留上游原始wheel和其中的完整许可证，各自依其原许可分发。逐发行来源、版本、SHA-256和许可文件见 `config/runtime.lock.json`，完整解析依赖见 `uv.lock`。这些组件不重新许可为本项目MIT。
 
 原版 Balatro 源码仅在 `.artifacts/game-source/` 用于本机建设核对，不属于交付源码，不公开发布。

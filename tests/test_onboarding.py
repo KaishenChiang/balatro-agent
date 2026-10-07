@@ -274,7 +274,7 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     # desktop process creation, log redirects, timer and per-launch receipt.
     (scripts / 'project.py').write_text(
         'import sys,json\nfrom pathlib import Path\n'
-        'root=Path(__file__).resolve().parents[1]; folder=root/".artifacts";folder.mkdir()\n'
+        'root=Path(__file__).resolve().parents[1]; folder=root/".artifacts";folder.mkdir(exist_ok=True)\n'
         'proof={"schema":"automatic-preparation-1","preparation_id":sys.argv[sys.argv.index("--preparation-id")+1],"prepared":True,"stdio_tools_verified":11,"game_started":False}\n'
         + ('proof["preparation_id"]="old-launch"\n' if case == 'stale_receipt' else '')
         + '(folder/"onboarding.local.json").write_text(json.dumps(proof),encoding="utf-8")\n'
@@ -283,7 +283,7 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     hook = "$form.ShowInTaskbar=$false;$form.Opacity=0;"
     hook += "$fixtureTimer=New-Object Windows.Forms.Timer;$fixtureTimer.Interval=250;"
     hook += "$fixtureTimer.Add_Tick({if($script:process -and $script:process.HasExited -and $retry.Enabled -or $copy.Enabled){"
-    hook += "$fixtureTimer.Stop();[IO.File]::WriteAllText((Join-Path $root 'window-result.txt'),$heading.Text+'|'+$copy.Enabled+'|'+$open.Enabled+'|'+$script:desktopError);$form.Close()}});$fixtureTimer.Start();"
+    hook += "$fixtureTimer.Stop();[IO.File]::WriteAllText((Join-Path $root 'window-result.txt'),$status.Text+'|'+$copy.Enabled+'|'+$open.Enabled+'|'+$script:desktopError);$form.Close()}});$fixtureTimer.Start();"
     marker = '$form.ShowDialog() | Out-Null'
     assert source.count(marker) == 1
     source = source.replace(marker, hook + marker)
@@ -294,7 +294,7 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     value = (root / 'window-result.txt').read_text(encoding='utf-8')
     if case == 'ready':
         assert result.returncode == 0, result.stderr
-        assert value == '准备完成，可以接入 AI|True|True|'
+        assert value == '准备就绪|True|True|'
     else:
         assert result.returncode == 1
         assert value.startswith('准备暂未完成|False|False|')

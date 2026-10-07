@@ -6,7 +6,7 @@
 
 ## 客户端配置
 
-推荐先双击[Balatro Agent.cmd](<../../Balatro Agent.cmd>)自动准备。Codex用户看到“准备完成”后，打开项目并发送窗口中的两句话即可。下面的手动配置用于其他客户端或排障，所有D:/path/to/balatro-agent都须换成自己的源码根目录。
+推荐先双击[Balatro Agent.exe](<../../Balatro Agent.exe>)自动准备。Codex用户看到“准备就绪”后，打开项目并发送窗口中的两句话即可。下面的手动配置用于其他客户端或排障，所有D:/path/to/balatro-agent都须换成自己的源码根目录。
 
 自动入口追加下面的Codex配置，无需预装Python／uv。用户登录客户端后发送[首用提示](../../prompts/first-use.md)；若工具未加载，按实际客户端能力重载。[OpenAI Docs配置说明](https://learn.chatgpt.com/docs/config-file/config-basic)确认个人配置为`.codex/config.toml`。
 

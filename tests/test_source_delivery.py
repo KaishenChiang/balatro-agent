@@ -74,7 +74,7 @@ def test_unverified_new_version_cannot_package_historical_success(tmp_path, monk
     (tmp_path / 'pyproject.toml').write_text('[project]\nversion="' + version + '"\n', encoding='utf-8')
     monkeypatch.setattr(package, 'ROOT', tmp_path)
     with pytest.raises(ValueError, match='no registered complete delivery evidence'):
-        package.main()
+        package.main([])
     assert not (tmp_path / 'deliverables').exists()
 
 
@@ -123,7 +123,8 @@ def source_check(tmp_path,monkeypatch):
         'synthetic':{'tests':5,'failures':0,'errors':0,'skipped':0},
         'source_unchanged_during_check':True,'source_snapshot':snapshot,
         'status':{'version':'0.6.2','single_stdio_entrypoint':True,
-                  'built_runtime_hashes_match':True,'fixed_downloads':[{'hash_match':True}],
+                  'built_runtime_hashes_match':True,'bundled_dependencies_verified':True,
+                  'fixed_downloads':[{'hash_match':True}],
                   'installed_runtime_matches_build':False}}
     monkeypatch.setattr(package,'source_snapshot',lambda root:snapshot)
     return checks/'release-check.json',report
