@@ -1,0 +1,140 @@
+{
+  "$defs": {
+    "NoteContent": {
+      "additionalProperties": false,
+      "properties": {
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/Source"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Sources",
+          "type": "array"
+        },
+        "facts": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Facts",
+          "type": "array"
+        },
+        "interpretation": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Interpretation",
+          "type": "array"
+        },
+        "conditions": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Conditions",
+          "type": "array"
+        },
+        "counterexamples": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 1,
+          "title": "Counterexamples",
+          "type": "array"
+        },
+        "confidence": {
+          "pattern": "^(low|medium|high)$",
+          "title": "Confidence",
+          "type": "string"
+        },
+        "revision_reason": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Revision Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sources",
+        "facts",
+        "interpretation",
+        "conditions",
+        "counterexamples",
+        "confidence",
+        "revision_reason"
+      ],
+      "title": "NoteContent",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "pattern": "^(n5|test)-[A-Za-z0-9-]{1,60}$",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 50,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "run_id",
+        "steps"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "default": "experience",
+      "enum": [
+        "experience",
+        "TEST"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "note_id": {
+      "pattern": "^(EXP|TEST)-[A-Z0-9][A-Z0-9-]{0,47}$",
+      "title": "Note Id",
+      "type": "string"
+    },
+    "content": {
+      "$ref": "#/$defs/NoteContent"
+    },
+    "expected_revision": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Expected Revision",
+      "type": "integer"
+    },
+    "write_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$",
+      "title": "Write Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "note_id",
+    "content",
+    "expected_revision",
+    "write_id"
+  ],
+  "title": "WriteNoteRequest",
+  "type": "object"
+}

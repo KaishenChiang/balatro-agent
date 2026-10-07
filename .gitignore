@@ -1,0 +1,14 @@
+.venv/
+.tools/
+.artifacts/
+__pycache__/
+.pytest_cache/
+*.pyc
+config/*.local.*
+config/balatro-agent-mcp.toml
+runs/
+deliverables/
+.env
+.env.*
+*.log
+*.jkr

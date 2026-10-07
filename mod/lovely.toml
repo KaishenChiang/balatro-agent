@@ -1,0 +1,20 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+[[patches]]
+[patches.module]
+source = "reader/startup_ui.lua"
+name = "balatro_agent.startup_ui"
+before = "main.lua"
+load_now = true
+
+[[patches]]
+[patches.copy]
+target = "main.lua"
+position = "append"
+payload = '''
+-- Runs after fixed Steamodded's startup display override (priority -5).
+require('balatro_agent.startup_ui').apply_loading()
+'''

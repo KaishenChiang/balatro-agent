@@ -1,0 +1,106 @@
+{
+  "title": "CalculateRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation",
+    "inputs"
+  ],
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": [
+        "sum",
+        "difference",
+        "product",
+        "quotient",
+        "mean",
+        "median",
+        "variance_population",
+        "combination",
+        "hypergeometric"
+      ]
+    },
+    "inputs": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "values"
+          ],
+          "properties": {
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 200,
+              "items": {
+                "type": "number",
+                "minimum": -1000000000000.0,
+                "maximum": 1000000000000.0
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "n",
+            "k"
+          ],
+          "properties": {
+            "n": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "k": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "population",
+            "successes",
+            "draws",
+            "min_successes",
+            "max_successes"
+          ],
+          "properties": {
+            "population": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "successes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "draws": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "min_successes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "max_successes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        }
+      ]
+    }
+  }
+}

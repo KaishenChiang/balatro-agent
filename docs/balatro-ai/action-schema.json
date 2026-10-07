@@ -1,0 +1,84 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "enum": [
+        "sort_rank",
+        "sort_suit",
+        "play",
+        "discard",
+        "reroll",
+        "cash_out",
+        "next_round",
+        "skip_pack",
+        "open_run_setup",
+        "next_setup_page",
+        "previous_setup_page",
+        "start_run",
+        "continue_run",
+        "run_info",
+        "deck_info",
+        "close_menu",
+        "main_menu",
+        "continue_endless",
+        "buy",
+        "buy_and_use",
+        "sell",
+        "use",
+        "select_pack_card",
+        "select",
+        "reorder",
+        "select_blind",
+        "skip_blind",
+        "select_setup_option",
+        "next_setup_choices",
+        "previous_setup_choices",
+        "open_options",
+        "open_settings",
+        "next_game_speed",
+        "previous_game_speed"
+      ],
+      "title": "Action",
+      "type": "string"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "title": "Parameters",
+      "type": "object"
+    },
+    "observation_id": {
+      "pattern": "^obs-[0-9a-f]{16}-[0-9]+$",
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "action_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}$",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "reason": {
+      "maxLength": 1024,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "experience_refs": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 30,
+      "title": "Experience Refs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "action",
+    "parameters",
+    "observation_id",
+    "action_id",
+    "reason",
+    "experience_refs"
+  ],
+  "title": "ActionRequest",
+  "type": "object"
+}

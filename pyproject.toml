@@ -1,0 +1,24 @@
+[project]
+name = "balatro-agent"
+version = "0.6.3"
+description = "Local player-visible Balatro MCP with controlled native execution"
+requires-python = ">=3.13,<3.14"
+license = "MIT"
+dependencies = ["httpx==0.28.1", "mcp==2.2.0"]
+
+[project.scripts]
+balatro-agent = "balatro_agent.server:main"
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "pytest-asyncio==1.2.0", "lupa==2.6"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.uv]
+package = true

@@ -1,0 +1,298 @@
+{
+  "evidence_type": "historical_filtered_delivery_archive",
+  "current_source_version": "0.6.2",
+  "historical_runtime_versions": "0.3.1 through 0.6.1; not current 0.6.2 game verification",
+  "normal_completed_games": 4,
+  "wins": 3,
+  "losses": 1,
+  "resumed_completed_games_separately": 2,
+  "original_unknown_preserved": {
+    "action_id": "fresh-129-hangeduse",
+    "original_state": "UNKNOWN",
+    "normal_completed_game": false
+  },
+  "whole_logs_included": 8,
+  "archive": "historical-runs.zip",
+  "archive_sha256": "df21aba6316f6a436b065bcbf70433c56afc2c5480a20760dff3b99cddc60e4c",
+  "experience_notes": 11,
+  "experience_revision_files": 39,
+  "not_a_model_ranking": true,
+  "files": [
+    {
+      "path": "runs/acceptance/n5-formal-1-20261003/codex-mcp.jsonl",
+      "bytes": 2790524,
+      "sha256": "3cc3a27bf0d86a34e626ffd2a88bb6808de5b2acdda36b6b70f2fdc714f62c0c",
+      "original_sha256": "3cc3a27bf0d86a34e626ffd2a88bb6808de5b2acdda36b6b70f2fdc714f62c0c",
+      "transformations": []
+    },
+    {
+      "path": "runs/acceptance/n5-formal-1-20261003/summary.json",
+      "bytes": 3546,
+      "sha256": "e87f8207c3ab8fb1cb31660c43244cfe8393fc55a91d92d63771835ce33f29eb",
+      "original_sha256": "e87f8207c3ab8fb1cb31660c43244cfe8393fc55a91d92d63771835ce33f29eb",
+      "transformations": []
+    },
+    {
+      "path": "runs/acceptance/n5-formal-2-20261003/codex-mcp.jsonl",
+      "bytes": 150976,
+      "sha256": "e09261e26bb4d434c3fb40ba72b82ebe59231685327f5049ce672657d61b4547",
+      "original_sha256": "e09261e26bb4d434c3fb40ba72b82ebe59231685327f5049ce672657d61b4547",
+      "transformations": []
+    },
+    {
+      "path": "runs/acceptance/n5-formal-2b-20261004/codex-mcp.jsonl",
+      "bytes": 2530535,
+      "sha256": "6c8ae36feaf28ce193e55192233498fa9f53c5a5ea18a1166cbc9701e995e53f",
+      "original_sha256": "6c8ae36feaf28ce193e55192233498fa9f53c5a5ea18a1166cbc9701e995e53f",
+      "transformations": []
+    },
+    {
+      "path": "runs/acceptance/n5-formal-2b-20261004/summary.json",
+      "bytes": 7507,
+      "sha256": "d708423d137236be47c43d8e15970dfa8e5a7959e4575708164fde390a61cca8",
+      "original_sha256": "d708423d137236be47c43d8e15970dfa8e5a7959e4575708164fde390a61cca8",
+      "transformations": []
+    },
+    {
+      "path": "runs/acceptance/n5-integration-20261004/codex-mcp.jsonl",
+      "bytes": 2211100,
+      "sha256": "5bba8cc796ec439de6e085bfaa92ca9aac0daf842f6181d72e798c6e8b18e768",
+      "original_sha256": "5bba8cc796ec439de6e085bfaa92ca9aac0daf842f6181d72e798c6e8b18e768",
+      "transformations": []
+    },
+    {
+      "path": "runs/acceptance/n5-integration-20261004/summary.json",
+      "bytes": 5150,
+      "sha256": "c498cada3747596fcab621468eb3ccddae72053835aa2e850cf72c8a5b70fd9b",
+      "original_sha256": "c498cada3747596fcab621468eb3ccddae72053835aa2e850cf72c8a5b70fd9b",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/delivery-speed-first-card-independent-20261005.json",
+      "bytes": 715,
+      "sha256": "14546016f08ff683868d50b82ed7d1416213e9e7be671d60a546c380acb1b711",
+      "original_sha256": "56cd69a9d856f7fa9e6a0c8fa65b45c343fc113e29839d1a3c2b4fb506d72a3b",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/delivery-speed-live-audit-corrected-20261005.json",
+      "bytes": 69707,
+      "sha256": "c860f6a01827250d0c6e2dcdc9d85884b934a2ed3262e1460dad32637082cdc0",
+      "original_sha256": "c860f6a01827250d0c6e2dcdc9d85884b934a2ed3262e1460dad32637082cdc0",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/delivery-speed-note-independent-20261005.json",
+      "bytes": 713,
+      "sha256": "153a7606d49ea8bec3717720dc55e41e3a5b97c8ed6fc4c203b04d88a55cb919",
+      "original_sha256": "320a09a4d6ed2d097f4e34852dc63abca3a31bd19bc4367455c8db3eb57c5d9d",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/delivery-speed-white-audit-20261005.json",
+      "bytes": 89909,
+      "sha256": "f9cb372e121b45fbbbc56443a7949c9251f4976f71d1d7b5ea23a6394aa21061",
+      "original_sha256": "f9cb372e121b45fbbbc56443a7949c9251f4976f71d1d7b5ea23a6394aa21061",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/final-acceptance-20261004.json",
+      "bytes": 5019,
+      "sha256": "4dadc21b8e22ac8bd624cfde42a9614fbad8af50a1f249a45680aaf5d8a85988",
+      "original_sha256": "4dadc21b8e22ac8bd624cfde42a9614fbad8af50a1f249a45680aaf5d8a85988",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/formal1-final-delivery-20261004.json",
+      "bytes": 181796,
+      "sha256": "2d97eaf8caec8c0344b8acc7ae99c7fbf7b30c55f886d5e83f1525d53b1b49a7",
+      "original_sha256": "2d97eaf8caec8c0344b8acc7ae99c7fbf7b30c55f886d5e83f1525d53b1b49a7",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/formal2-interrupted-final-delivery-20261004.json",
+      "bytes": 14036,
+      "sha256": "6b04062d9ff473ef3b767ad9a29124bcddd68ca9a2b97d28afb8103b3ba545af",
+      "original_sha256": "6b04062d9ff473ef3b767ad9a29124bcddd68ca9a2b97d28afb8103b3ba545af",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/formal2b-exp-conditional-engine-independent-20261004.json",
+      "bytes": 708,
+      "sha256": "1d71148f8c40317e9b3e04122a1d38bcf4e770b41c1d81e6e34d413f675f8d9c",
+      "original_sha256": "4fac90ce71cba55288f0f0933db6375517314d035b727928e516a5a7243420b2",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-exp-conditional-hands-independent-20261004.json",
+      "bytes": 707,
+      "sha256": "2c2104c0ef52e4ea5ccd00b9a984e49b62b03c37f22002ac01d4e5e6832f7421",
+      "original_sha256": "7d6863bacfc79fa546aa9b06acbd6b5b3466d0921dffb2609f23b6c82b547891",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-exp-flush-support-independent-20261004.json",
+      "bytes": 702,
+      "sha256": "2312727c8cf8e8e164a638f1c19985c1d47afccad259c4c4b5e00c090c9850da",
+      "original_sha256": "7f41bd9a3f0473364ff3d90ccedda74c85bdbb30c14e6927be2494e617faf404",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-exp-money-scoring-independent-20261004.json",
+      "bytes": 703,
+      "sha256": "69c40a8d822aa7839a88fce0b2c11d6b367068d1cef3d4672e6708ed9910a8f4",
+      "original_sha256": "01452258b3c1e9149f21b53fa2b7dd32316d555993de67e68c0a6d853d5d38db",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-exp-public-state-after-draw-independent-20261004.json",
+      "bytes": 713,
+      "sha256": "39360fb12ab07497fe9af594bfa6ed05ea082a0bfd219c55d67ca57a58140d61",
+      "original_sha256": "9e73ab465bdec1c41217d416e20fcb5f9dfd4fa4ca33d4396ed5e21b94cba969",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-exp-repeated-hand-independent-20261004.json",
+      "bytes": 703,
+      "sha256": "2a663819f2339b1d76f629d7552cd2eab751117b0fe268865326df797d655ef7",
+      "original_sha256": "1b41fbe1a065e05fd3763f231838f593e8a65c8f00203f46b7c14905cd201981",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-exp-score-threshold-independent-20261004.json",
+      "bytes": 705,
+      "sha256": "e6bd5d8a772166c548a353ef7a8585d662939b81a4d042f9a456dab0c55e8662",
+      "original_sha256": "ba00ff957d43cf43b6f2b7207230c6f1bd1a32e3ac93ce4845fe5f93fa617972",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/formal2b-final-delivery-20261004.json",
+      "bytes": 151870,
+      "sha256": "075ec0eac2893c3dacabe6ada22154d072fa618975a25853a5720bf61321ceae",
+      "original_sha256": "075ec0eac2893c3dacabe6ada22154d072fa618975a25853a5720bf61321ceae",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/fresh-context-20261005-audit.json",
+      "bytes": 54875,
+      "sha256": "5924aa6aa4383124f263c9f7cf98c45f7331bdc35c569e2171cb953cec25fab0",
+      "original_sha256": "5924aa6aa4383124f263c9f7cf98c45f7331bdc35c569e2171cb953cec25fab0",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/fresh-resume-final-delivery-audit-20261005.json",
+      "bytes": 58989,
+      "sha256": "46723aa66e949ef104eda1cbd021db06989285a44d6e7abe9c41f2f01dbb7c10",
+      "original_sha256": "46723aa66e949ef104eda1cbd021db06989285a44d6e7abe9c41f2f01dbb7c10",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/fresh-resume-planet-independent-20261005.json",
+      "bytes": 721,
+      "sha256": "4cc4c2049f9ccea48f9210e7a213b3b66f254e41666c8831804801915eec8b34",
+      "original_sha256": "081891c6004fec3462965aeca47234059acd9c7575f257494c2e4a40283fd52a",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/fresh-resume-shuffle-independent-20261005.json",
+      "bytes": 722,
+      "sha256": "98204ef345f506bdf4cbc154627d7815d7d53f6af90f2f6c70d448b6f5793a5e",
+      "original_sha256": "027908a377824d40e6c0509a2825095bac5ac363ac053b9d83621c173f6f9b9b",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/checks/integration-live-audit-20261004.json",
+      "bytes": 151394,
+      "sha256": "7ddda86a0aa9ca52b84e08b24f70908abbc0f0751b1872f443244f4bdb9542a3",
+      "original_sha256": "7ddda86a0aa9ca52b84e08b24f70908abbc0f0751b1872f443244f4bdb9542a3",
+      "transformations": []
+    },
+    {
+      "path": "runs/checks/integration-note-independent-20261004.json",
+      "bytes": 724,
+      "sha256": "b83a9a526e23902010905000f9466abe6d2df39dba4768703e38ad4ac841b36a",
+      "original_sha256": "093bb90e37e937a0cf7a74483cc604a4d0edd461f2b241cd99400bfaaba96f77",
+      "transformations": [
+        "interpreter path normalized"
+      ]
+    },
+    {
+      "path": "runs/optimization/n5-fresh-context-20261005-01/codex-mcp.jsonl",
+      "bytes": 773181,
+      "sha256": "7ddd210a6107f43dcf21ab6dfc2ac62f4d1c9029472c02b0671892196192e292",
+      "original_sha256": "7ddd210a6107f43dcf21ab6dfc2ac62f4d1c9029472c02b0671892196192e292",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-fresh-context-20261005-01/summary.json",
+      "bytes": 16530,
+      "sha256": "a39cf60f881a1766ae726b60e40b02701e443c9292446044e28c3e32c11b8af3",
+      "original_sha256": "a39cf60f881a1766ae726b60e40b02701e443c9292446044e28c3e32c11b8af3",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-fresh-context-resume-20261005-01/codex-mcp.jsonl",
+      "bytes": 939700,
+      "sha256": "028a8b891b7e36860b122be116aa4a03be957774afeea2180c6b44b9013bb6af",
+      "original_sha256": "028a8b891b7e36860b122be116aa4a03be957774afeea2180c6b44b9013bb6af",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-fresh-context-resume-20261005-01/summary.json",
+      "bytes": 8325,
+      "sha256": "898f95ba87d7445dc5a101d307991e72850aa1e5188ca8aa3f6cb0756cc75c9b",
+      "original_sha256": "898f95ba87d7445dc5a101d307991e72850aa1e5188ca8aa3f6cb0756cc75c9b",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-speed-resume-20261005-01/codex-mcp.jsonl",
+      "bytes": 1125186,
+      "sha256": "ffe5c2b19ab6ab29c486486b9b42a94ee01208fed91fa5b680ad47e29e3f1312",
+      "original_sha256": "ffe5c2b19ab6ab29c486486b9b42a94ee01208fed91fa5b680ad47e29e3f1312",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-speed-resume-20261005-01/summary.json",
+      "bytes": 2943,
+      "sha256": "4ec4d2670ed8c154a2b8e02de12f708b55585d6a7149ab47d4eff8429ab62c13",
+      "original_sha256": "4ec4d2670ed8c154a2b8e02de12f708b55585d6a7149ab47d4eff8429ab62c13",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-speed-white-20261005-01/codex-mcp.jsonl",
+      "bytes": 1482538,
+      "sha256": "c5ed4e570e72107996663996d7b12b05f0c6ea7c28c560db7cd641490b0e685e",
+      "original_sha256": "c5ed4e570e72107996663996d7b12b05f0c6ea7c28c560db7cd641490b0e685e",
+      "transformations": []
+    },
+    {
+      "path": "runs/optimization/n5-speed-white-20261005-01/summary.json",
+      "bytes": 4400,
+      "sha256": "e45c1ebe40119e2882b724a382f6799b3b78b1c6a59ee7c17ced041bd3627c61",
+      "original_sha256": "e45c1ebe40119e2882b724a382f6799b3b78b1c6a59ee7c17ced041bd3627c61",
+      "transformations": []
+    }
+  ]
+}

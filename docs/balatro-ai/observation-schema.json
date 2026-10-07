@@ -1,0 +1,1168 @@
+{
+  "$defs": {
+    "Blind": {
+      "properties": {
+        "slot": {
+          "enum": [
+            "Small",
+            "Big",
+            "Boss",
+            "current"
+          ],
+          "title": "Slot",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "description": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Description",
+          "type": "array"
+        },
+        "required_chips": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Required Chips"
+        },
+        "reward": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reward"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "enum": [
+                "Current",
+                "Select",
+                "Upcoming",
+                "Defeated",
+                "Skipped",
+                "Hide"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        },
+        "skip_tag_name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skip Tag Name"
+        },
+        "skip_tag_description": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Skip Tag Description",
+          "type": "array"
+        }
+      },
+      "required": [
+        "slot"
+      ],
+      "title": "Blind",
+      "type": "object"
+    },
+    "Card": {
+      "properties": {
+        "visibility": {
+          "enum": [
+            "face_up",
+            "face_down",
+            "stone",
+            "undiscovered"
+          ],
+          "title": "Visibility",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "enum": [
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "Jack",
+                "Queen",
+                "King",
+                "Ace"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rank"
+        },
+        "suit": {
+          "anyOf": [
+            {
+              "enum": [
+                "Spades",
+                "Hearts",
+                "Clubs",
+                "Diamonds"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suit"
+        },
+        "description": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Description",
+          "type": "array"
+        },
+        "tooltip_info": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Tooltip Info",
+          "type": "array"
+        },
+        "debuffed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Debuffed"
+        },
+        "forced_selection": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Forced Selection"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price"
+        },
+        "sell_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sell Price"
+        },
+        "position": {
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Position",
+          "type": "integer"
+        },
+        "selected": {
+          "title": "Selected",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "visibility",
+        "position",
+        "selected"
+      ],
+      "title": "Card",
+      "type": "object"
+    },
+    "CardDetails": {
+      "properties": {
+        "visibility": {
+          "enum": [
+            "face_up",
+            "face_down",
+            "stone",
+            "undiscovered"
+          ],
+          "title": "Visibility",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "rank": {
+          "anyOf": [
+            {
+              "enum": [
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "Jack",
+                "Queen",
+                "King",
+                "Ace"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rank"
+        },
+        "suit": {
+          "anyOf": [
+            {
+              "enum": [
+                "Spades",
+                "Hearts",
+                "Clubs",
+                "Diamonds"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suit"
+        },
+        "description": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Description",
+          "type": "array"
+        },
+        "tooltip_info": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Tooltip Info",
+          "type": "array"
+        },
+        "debuffed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Debuffed"
+        },
+        "forced_selection": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Forced Selection"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Price"
+        },
+        "sell_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sell Price"
+        }
+      },
+      "required": [
+        "visibility"
+      ],
+      "title": "CardDetails",
+      "type": "object"
+    },
+    "DeckEntry": {
+      "properties": {
+        "card": {
+          "$ref": "#/$defs/CardDetails"
+        },
+        "count": {
+          "maximum": 500,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "greyed": {
+          "title": "Greyed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "card",
+        "count",
+        "greyed"
+      ],
+      "title": "DeckEntry",
+      "type": "object"
+    },
+    "HandLevel": {
+      "properties": {
+        "name": {
+          "maxLength": 512,
+          "title": "Name",
+          "type": "string"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Level"
+        },
+        "chips": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chips"
+        },
+        "mult": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mult"
+        },
+        "played": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Played"
+        },
+        "description": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Description",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "HandLevel",
+      "type": "object"
+    },
+    "Menus": {
+      "properties": {
+        "poker_hands": {
+          "items": {
+            "$ref": "#/$defs/HandLevel"
+          },
+          "maxItems": 20,
+          "title": "Poker Hands",
+          "type": "array"
+        },
+        "deck_composition": {
+          "items": {
+            "$ref": "#/$defs/DeckEntry"
+          },
+          "maxItems": 500,
+          "title": "Deck Composition",
+          "type": "array"
+        },
+        "deck_scope": {
+          "default": "not_open",
+          "enum": [
+            "displayed_menu",
+            "not_open"
+          ],
+          "title": "Deck Scope",
+          "type": "string"
+        }
+      },
+      "title": "Menus",
+      "type": "object"
+    },
+    "Preferences": {
+      "properties": {
+        "availability": {
+          "default": "not_open",
+          "enum": [
+            "observed",
+            "not_open"
+          ],
+          "title": "Availability",
+          "type": "string"
+        },
+        "game_speed": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Game Speed"
+        }
+      },
+      "title": "Preferences",
+      "type": "object"
+    },
+    "Region": {
+      "properties": {
+        "name": {
+          "enum": [
+            "hand",
+            "play",
+            "jokers",
+            "consumables",
+            "shop_jokers",
+            "shop_vouchers",
+            "shop_boosters",
+            "pack"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "capacity": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capacity"
+        },
+        "selection_limit": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Selection Limit"
+        },
+        "cards": {
+          "items": {
+            "$ref": "#/$defs/Card"
+          },
+          "maxItems": 200,
+          "title": "Cards",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Region",
+      "type": "object"
+    },
+    "Resources": {
+      "properties": {
+        "availability": {
+          "default": "unknown",
+          "enum": [
+            "observed",
+            "unknown",
+            "not_applicable"
+          ],
+          "title": "Availability",
+          "type": "string"
+        },
+        "dollars": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dollars"
+        },
+        "chips": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Chips"
+        },
+        "hands_left": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hands Left"
+        },
+        "discards_left": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Discards Left"
+        },
+        "ante": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ante"
+        },
+        "round": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Round"
+        },
+        "reroll_cost": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reroll Cost"
+        },
+        "pack_choices": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pack Choices"
+        }
+      },
+      "title": "Resources",
+      "type": "object"
+    },
+    "Setup": {
+      "properties": {
+        "availability": {
+          "default": "unknown",
+          "enum": [
+            "observed",
+            "unknown",
+            "not_applicable"
+          ],
+          "title": "Availability",
+          "type": "string"
+        },
+        "deck_name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Deck Name"
+        },
+        "stake_name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stake Name"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "enum": [
+                "deck_choice",
+                "stake_choice"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/SetupOption"
+          },
+          "maxItems": 200,
+          "title": "Options",
+          "type": "array"
+        }
+      },
+      "title": "Setup",
+      "type": "object"
+    },
+    "SetupOption": {
+      "properties": {
+        "kind": {
+          "enum": [
+            "deck",
+            "stake"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "position": {
+          "maximum": 200,
+          "minimum": 0,
+          "title": "Position",
+          "type": "integer"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 512,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "description": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Description",
+          "type": "array"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "selected": {
+          "title": "Selected",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "position",
+        "enabled",
+        "selected"
+      ],
+      "title": "SetupOption",
+      "type": "object"
+    },
+    "UIAction": {
+      "properties": {
+        "name": {
+          "enum": [
+            "open_run_setup",
+            "start_run",
+            "continue_run",
+            "quick_start_run",
+            "next_setup_page",
+            "previous_setup_page",
+            "select_setup_option",
+            "next_setup_choices",
+            "previous_setup_choices",
+            "open_options",
+            "open_settings",
+            "next_game_speed",
+            "previous_game_speed",
+            "select_blind",
+            "skip_blind",
+            "play",
+            "discard",
+            "sort_rank",
+            "sort_suit",
+            "cash_out",
+            "buy",
+            "buy_and_use",
+            "sell",
+            "reroll",
+            "next_round",
+            "use",
+            "select_pack_card",
+            "skip_pack",
+            "run_info",
+            "deck_info",
+            "close_menu",
+            "main_menu",
+            "continue_endless"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "blind_slot": {
+          "anyOf": [
+            {
+              "enum": [
+                "Small",
+                "Big",
+                "Boss"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Blind Slot"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "enum": [
+                "hand",
+                "play",
+                "jokers",
+                "consumables",
+                "shop_jokers",
+                "shop_vouchers",
+                "shop_boosters",
+                "pack"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Position"
+        },
+        "label": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 20,
+          "title": "Label",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "enabled"
+      ],
+      "title": "UIAction",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "phase": {
+      "enum": [
+        "main_menu",
+        "blind_select",
+        "hand",
+        "transition",
+        "round_eval",
+        "shop",
+        "pack",
+        "menu",
+        "terminal",
+        "unsupported"
+      ],
+      "title": "Phase",
+      "type": "string"
+    },
+    "ready": {
+      "title": "Ready",
+      "type": "boolean"
+    },
+    "ready_reason": {
+      "enum": [
+        "ui_operable",
+        "controller_locked",
+        "state_initializing",
+        "processing",
+        "ui_not_displayed",
+        "unsupported_state",
+        "menu_open",
+        "unknown_readiness"
+      ],
+      "title": "Ready Reason",
+      "type": "string"
+    },
+    "underlying_phase": {
+      "anyOf": [
+        {
+          "enum": [
+            "main_menu",
+            "blind_select",
+            "hand",
+            "transition",
+            "round_eval",
+            "shop",
+            "pack",
+            "menu",
+            "terminal",
+            "unsupported"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Underlying Phase"
+    },
+    "resources": {
+      "$ref": "#/$defs/Resources"
+    },
+    "setup": {
+      "$ref": "#/$defs/Setup"
+    },
+    "preferences": {
+      "$ref": "#/$defs/Preferences"
+    },
+    "regions": {
+      "items": {
+        "$ref": "#/$defs/Region"
+      },
+      "maxItems": 8,
+      "title": "Regions",
+      "type": "array"
+    },
+    "blinds": {
+      "items": {
+        "$ref": "#/$defs/Blind"
+      },
+      "maxItems": 4,
+      "title": "Blinds",
+      "type": "array"
+    },
+    "ui_actions": {
+      "items": {
+        "$ref": "#/$defs/UIAction"
+      },
+      "maxItems": 200,
+      "title": "Ui Actions",
+      "type": "array"
+    },
+    "settlement_text": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 300,
+      "title": "Settlement Text",
+      "type": "array"
+    },
+    "menus": {
+      "$ref": "#/$defs/Menus"
+    },
+    "outcome": {
+      "anyOf": [
+        {
+          "enum": [
+            "win",
+            "loss"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Outcome"
+    },
+    "unknowns": {
+      "items": {
+        "enum": [
+          "transition_regions_suppressed",
+          "tooltip_unavailable",
+          "dynamic_tooltip_omitted",
+          "unconfirmed_field",
+          "unsupported_rule",
+          "menu_not_open",
+          "unsupported_menu",
+          "readiness_unconfirmed"
+        ],
+        "type": "string"
+      },
+      "maxItems": 100,
+      "title": "Unknowns",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "reader-2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "visibility_policy_version": {
+      "const": "player-visible-1",
+      "title": "Visibility Policy Version",
+      "type": "string"
+    },
+    "profile": {
+      "maximum": 3,
+      "minimum": 1,
+      "title": "Profile",
+      "type": "integer"
+    },
+    "observation_id": {
+      "pattern": "^obs-[0-9a-f]{16}-[0-9]+$",
+      "title": "Observation Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "phase",
+    "ready",
+    "ready_reason",
+    "resources",
+    "schema_version",
+    "visibility_policy_version",
+    "profile",
+    "observation_id"
+  ],
+  "title": "Observation",
+  "type": "object"
+}

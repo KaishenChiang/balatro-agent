@@ -1,0 +1,9 @@
+{
+  "schema": "balatro-fixed-downloads-1",
+  "sources": [
+    {"name":"balatrobot","version":"1.5.2","commit":"9052d76f14723293f6c6b2cecaa791a5c4ae68f3","url":"https://codeload.github.com/coder/balatrobot/zip/9052d76f14723293f6c6b2cecaa791a5c4ae68f3","archive":"balatrobot-9052d76.zip","sha256":"f1c3b2faaa9e19cbbaf13d3ead5ecc361912420abb2e8aba1084e9809db6044a","destination":".artifacts/upstream/balatrobot-9052d76f14723293f6c6b2cecaa791a5c4ae68f3","strip_root":true},
+    {"name":"lovely","version":"0.9.0","commit":"91759da5702618c3b940fbbe8135954414c0ef34","url":"https://github.com/ethangreen-dev/lovely-injector/releases/download/v0.9.0/lovely-x86_64-pc-windows-msvc.zip","archive":"lovely-0.9.0.zip","sha256":"40b994a055ee75e5f2aba81e7ae06f2c17460e18cc346483089921899fadd1f7","destination":".artifacts/lovely","strip_root":false},
+    {"name":"steamodded","version":"26.829.0","commit":"39182f0cc7b1af86d3d3d6afc5422661a07b4312","url":"https://codeload.github.com/Steamodded/smods/zip/refs/tags/26.829.0","archive":"steamodded-26.829.0.zip","sha256":"1ecb7015a29c29ef507f515076c9e8a7aeffaf18dae009645f8da7b4483322cf","destination":".artifacts/upstream/smods-26.829.0","strip_root":true},
+    {"name":"uv","version":"0.9.21","commit":"0dc9556adb488469ee807e360768ed6b5a6d0488","url":"https://github.com/astral-sh/uv/releases/download/0.9.21/uv-x86_64-pc-windows-msvc.zip","archive":"uv-0.9.21.zip","sha256":"d27952e73183ef8f6ee8c2a50cf8b3f2e08e01b6a9279a00a85cb261ea8d8337","destination":".tools/uv","strip_root":false}
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "upstream_release": "1.5.2",
+  "upstream_commit": "9052d76f14723293f6c6b2cecaa791a5c4ae68f3",
+  "upstream_manifest_version": "1.5.1",
+  "files": [
+    {
+      "path": "balatrobot.json",
+      "sha256": "cb179e4325c5546051edf8d367aa6a4ef8332192d1da6a67b0e4b932d3e5aed1"
+    },
+    {
+      "path": "balatrobot.lua",
+      "sha256": "c46466a6233848e264fb3ae4fa2512b7116abad80ae025a7845a1212dfdb9db1"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "5eccd0eeca906db6d661b64dd05e1d4a4b2e49d37d43bbcfd2c8cce4d7832920"
+    },
+    {
+      "path": "lovely.toml",
+      "sha256": "b5114b4c7151e53df3b68e6cdfe528f6036a32076581ef065a60de3b0af8a1a4"
+    },
+    {
+      "path": "reader/act_submit.lua",
+      "sha256": "8e50b951132c9ac6f98995126ee0e302b8291516a7d8a1d36f81772b076b6cf4"
+    },
+    {
+      "path": "reader/action_status.lua",
+      "sha256": "e1a426a010f396679e3a9392c8177e23597b57c67c722cbabdcc6adb347de6ae"
+    },
+    {
+      "path": "reader/binding.lua",
+      "sha256": "23fbfb1b246dce7e6bb8242c2ea85e41e697e916d7d790055b8e145c771f18fa"
+    },
+    {
+      "path": "reader/executor.lua",
+      "sha256": "ea9e37dfd5ea437a1aa429e0c7945aeaad763d18b815e56b1005bb6b5ef773a5"
+    },
+    {
+      "path": "reader/health.lua",
+      "sha256": "e2b56663bcaf24f6afa8e487a354d4fc399ad7b97f0bacca0178d087c4d6a143"
+    },
+    {
+      "path": "reader/reader.lua",
+      "sha256": "caf619ad9be37d6c6c9cb3102087fdfe839c381f8e5c16a5b55515fc91690d37"
+    },
+    {
+      "path": "reader/snapshot.lua",
+      "sha256": "8d1c53503ac7e9be5fdc72abbaffbc8fe85a25f9551fa6f8fda1be9a3ac8223a"
+    },
+    {
+      "path": "reader/startup_ui.lua",
+      "sha256": "9567602c8aefa4b34c3a3ae361a357fcb7c758bbd98c2537f6c03f8abab08b42"
+    },
+    {
+      "path": "reader-profile.json",
+      "sha256": "37795910a9f853345ba767953ed9f8f797d7d32166ada0fb1e7d58308b7ea92e"
+    },
+    {
+      "path": "src/lua/core/dispatcher.lua",
+      "sha256": "97f379556debdf34128613d51febc481fd6cc0c063a121ecdcb39e34cc026b14"
+    },
+    {
+      "path": "src/lua/core/server.lua",
+      "sha256": "6249e699350801cde85781c6de2062b864f053c95a6ed289d968780fb94f1cc5"
+    },
+    {
+      "path": "src/lua/core/validator.lua",
+      "sha256": "d0fff42151ada1734faa71b7d187ff87ef126c559e3fb722ddf63d96798b4138"
+    },
+    {
+      "path": "src/lua/utils/errors.lua",
+      "sha256": "7b172b8decb248825037bb1f6bc3ef998e70a5ae4cc34b89b0903da2bdbdd007"
+    }
+  ]
+}

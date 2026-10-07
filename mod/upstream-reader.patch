@@ -1,0 +1,301 @@
+--- upstream/balatrobot.json
++++ reader/balatrobot.json
+@@ -17,6 +17,6 @@
+   "display_name": "BB",
+   "version": "1.5.1",
+   "dependencies": [
+-    "Steamodded (>=1.~)"
++    "Steamodded (>=26.829.0)"
+   ]
+ }
+--- upstream/src/lua/core/server.lua
++++ reader/src/lua/core/server.lua
+@@ -118,17 +118,8 @@
+   server:settimeout(0)
+   BB_SERVER.server_socket = server
+ 
+-  -- Load OpenRPC spec file from mod directory
+-  local spec_path = SMODS.current_mod.path .. "src/lua/utils/openrpc.json"
+-  local spec_file = io.open(spec_path, "r")
+-  if spec_file then
+-    BB_SERVER.openrpc_spec = spec_file:read("*a")
+-    spec_file:close()
+-    sendDebugMessage("Loaded OpenRPC spec from " .. spec_path, "BB.SERVER")
+-  else
+-    sendWarnMessage("OpenRPC spec not found at " .. spec_path, "BB.SERVER")
+-    BB_SERVER.openrpc_spec = '{"error": "OpenRPC spec not found"}'
+-  end
++  -- Reader patch: no upstream full-state/action discovery document.
++  BB_SERVER.openrpc_spec = nil
+ 
+   sendDebugMessage("HTTP server listening on http://" .. BB_SERVER.host .. ":" .. BB_SERVER.port, "BB.SERVER")
+   return true
+@@ -301,7 +292,7 @@
+ 
+   -- Validate JSON-RPC version
+   if parsed.jsonrpc ~= "2.0" then
+-    BB_SERVER.current_request_id = parsed.id
++    BB_SERVER.current_request_id = type(parsed.id) == "number" and parsed.id >= 1 and parsed.id <= 1000000000 and parsed.id == math.floor(parsed.id) and parsed.id or nil
+     BB_SERVER.send_response({
+       message = "Invalid JSON-RPC version: expected '2.0'",
+       name = BB_ERROR_NAMES.BAD_REQUEST,
+@@ -320,10 +311,10 @@
+   end
+ 
+   local id_type = type(parsed.id)
+-  if id_type ~= "number" and id_type ~= "string" then
++  if id_type ~= "number" or parsed.id < 1 or parsed.id > 1000000000 then
+     BB_SERVER.current_request_id = nil
+     BB_SERVER.send_response({
+-      message = "Invalid Request: 'id' must be an integer or string",
++      message = "Request id must be a positive bounded integer",
+       name = BB_ERROR_NAMES.BAD_REQUEST,
+     })
+     return
+@@ -338,7 +329,7 @@
+     return
+   end
+ 
+-  BB_SERVER.current_request_id = parsed.id
++  BB_SERVER.current_request_id = type(parsed.id) == "number" and parsed.id >= 1 and parsed.id <= 1000000000 and parsed.id == math.floor(parsed.id) and parsed.id or nil
+ 
+   -- Dispatch to endpoint
+   if dispatcher and dispatcher.dispatch then
+@@ -412,7 +403,7 @@
+ 
+   local success, json_str = pcall(json.encode, wrapped)
+   if not success then
+-    sendDebugMessage("Failed to encode response: " .. tostring(json_str), "BB.SERVER")
++    sendDebugMessage("Reader response encoding failed", "BB.SERVER")
+     return false
+   end
+ 
+--- upstream/src/lua/core/dispatcher.lua
++++ reader/src/lua/core/dispatcher.lua
+@@ -7,7 +7,7 @@
+ ---@type Validator
+ local Validator = assert(SMODS.load_file("src/lua/core/validator.lua"))()
+ ---@type BB_LOGGER
+-local BB_LOGGER = assert(SMODS.load_file("src/lua/utils/logger.lua"))()
++-- Reader patch: raw request logging is not loaded.
+ local socket = require("socket")
+ 
+ ---@type table<integer, string>?
+@@ -132,101 +132,21 @@
+ 
+ ---@param request Request.Server
+ function BB_DISPATCHER.dispatch(request)
+-  -- Trigger render for this frame if render_on_api mode is enabled
+-  if BB_RENDER ~= nil then
+-    BB_RENDER = true
+-  end
+-
+-  -- TIER 1: Protocol Validation (jsonrpc version checked in server.receive())
+-  if not request.method or type(request.method) ~= "string" then
+-    BB_DISPATCHER.send_error("Request missing 'method' field", BB_ERROR_NAMES.BAD_REQUEST)
++  -- Static errors only. No arbitrary forwarding, discovery or raw params logs.
++  local method = request.method
++  if method ~= "health" and method ~= "reader_snapshot" and method ~= "act_submit" and method ~= "action_status" then
++    BB_DISPATCHER.send_error("Method not allowed", BB_ERROR_NAMES.NOT_ALLOWED)
+     return
+   end
+-
+-  -- Handle rpc.discover (OpenRPC Service Discovery)
+-  if request.method == "rpc.discover" then
+-    if BB_DISPATCHER.Server and BB_DISPATCHER.Server.openrpc_spec then
+-      local json = require("json")
+-      local success, spec = pcall(json.decode, BB_DISPATCHER.Server.openrpc_spec)
+-      if success then
+-        BB_DISPATCHER.Server.send_response(spec)
+-      else
+-        BB_DISPATCHER.send_error("Failed to parse OpenRPC spec", BB_ERROR_NAMES.INTERNAL_ERROR)
+-      end
+-    else
+-      BB_DISPATCHER.send_error("OpenRPC spec not available", BB_ERROR_NAMES.INTERNAL_ERROR)
+-    end
++  if type(request.params) ~= "table" or ((method == "health" or method == "reader_snapshot") and next(request.params) ~= nil) then
++    BB_DISPATCHER.send_error("No parameters accepted", BB_ERROR_NAMES.BAD_REQUEST)
+     return
+   end
+-
+-  local params = request.params or {}
+-  local endpoint = BB_DISPATCHER.endpoints[request.method]
+-  if not endpoint then
+-    BB_DISPATCHER.send_error("Unknown method: " .. request.method, BB_ERROR_NAMES.BAD_REQUEST)
+-    return
+-  end
+-
+-  -- Log incoming request with params
+-  local start_time = socket.gettime()
+-  sendDebugMessage(request.method .. BB_LOGGER.serialize_params(params), "BB.REQUEST")
+-
+-  -- TIER 2: Schema Validation
+-  local valid, err_msg, err_code = Validator.validate(params, endpoint.schema)
+-  if not valid then
+-    sendWarnMessage(request.method .. ": " .. (err_msg or "Validation failed"), "BB.VALIDATION")
+-    BB_DISPATCHER.send_error(err_msg or "Validation failed", err_code or BB_ERROR_NAMES.BAD_REQUEST)
+-    return
+-  end
+-
+-  -- TIER 3: Game State Validation
+-  if endpoint.requires_state then
+-    local current_state = G and G.STATE or "UNKNOWN"
+-    local state_valid = false
+-    for _, required_state in ipairs(endpoint.requires_state) do
+-      if current_state == required_state then
+-        state_valid = true
+-        break
+-      end
+-    end
+-    if not state_valid then
+-      local state_names = {}
+-      for _, state in ipairs(endpoint.requires_state) do
+-        table.insert(state_names, get_state_name(state))
+-      end
+-      local current_state_name = get_state_name(current_state)
+-      sendWarnMessage(
+-        string.format("%s: requires %s, current=%s", request.method, table.concat(state_names, "|"), current_state_name),
+-        "BB.STATE"
+-      )
+-      BB_DISPATCHER.send_error(
+-        "Method '" .. request.method .. "' requires one of these states: " .. table.concat(state_names, ", "),
+-        BB_ERROR_NAMES.INVALID_STATE
+-      )
+-      return
+-    end
+-  end
+-
+-  -- TIER 4: Execute Endpoint
+-  local function send_response(response)
+-    if BB_DISPATCHER.Server then
+-      -- Log response with timing
+-      local duration_ms = (socket.gettime() - start_time) * 1000
+-      local is_error = response.message ~= nil
+-      if is_error then
+-        sendDebugMessage(string.format("%s ERR (%.0fms)", request.method, duration_ms), "BB.RESPONSE")
+-      else
+-        sendDebugMessage(string.format("%s OK (%.0fms)", request.method, duration_ms), "BB.RESPONSE")
+-      end
+-      BB_DISPATCHER.Server.send_response(response)
+-    else
+-      sendDebugMessage("Cannot send response - Server not initialized", "BB.DISPATCHER")
+-    end
+-  end
+-  local exec_success, exec_error = pcall(function()
+-    endpoint.execute(params, send_response)
++  local endpoint = BB_DISPATCHER.endpoints[method]
++  local ok = pcall(function()
++    endpoint.execute(request.params, function(result) BB_DISPATCHER.Server.send_response(result) end)
+   end)
+-  if not exec_success then
+-    sendErrorMessage(request.method .. ": " .. tostring(exec_error), "BB.EXEC")
+-    BB_DISPATCHER.send_error(tostring(exec_error), BB_ERROR_NAMES.INTERNAL_ERROR)
++  if not ok then
++    BB_DISPATCHER.send_error("Reader snapshot failed", BB_ERROR_NAMES.INTERNAL_ERROR)
+   end
+ end
+--- upstream/balatrobot.lua
++++ reader/balatrobot.lua
+@@ -1,80 +1,24 @@
+--- Load required files
+-assert(SMODS.load_file("src/lua/settings.lua"))() -- define BB_SETTINGS
+-
+--- Configure Balatro with appropriate settings from environment variables
+-BB_SETTINGS.setup()
+-
+--- Endpoints for the BalatroBot API
+-BB_ENDPOINTS = {
+-  -- Health endpoint
+-  "src/lua/endpoints/health.lua",
+-  -- Gamestate endpoints
+-  "src/lua/endpoints/gamestate.lua",
+-  -- Save/load endpoints
+-  "src/lua/endpoints/save.lua",
+-  "src/lua/endpoints/load.lua",
+-  -- Screenshot endpoint
+-  "src/lua/endpoints/screenshot.lua",
+-  -- Game control endpoints
+-  "src/lua/endpoints/set.lua",
+-  "src/lua/endpoints/add.lua",
+-  -- Gameplay endpoints
+-  "src/lua/endpoints/menu.lua",
+-  "src/lua/endpoints/start.lua",
+-  -- Blind selection endpoints
+-  "src/lua/endpoints/skip.lua",
+-  "src/lua/endpoints/select.lua",
+-  -- Play/discard endpoints
+-  "src/lua/endpoints/play.lua",
+-  "src/lua/endpoints/discard.lua",
+-  -- Cash out endpoint
+-  "src/lua/endpoints/cash_out.lua",
+-  -- Shop endpoints
+-  "src/lua/endpoints/next_round.lua",
+-  "src/lua/endpoints/reroll.lua",
+-  "src/lua/endpoints/buy.lua",
+-  "src/lua/endpoints/pack.lua",
+-  -- Rearrange endpoint
+-  "src/lua/endpoints/rearrange.lua",
+-  -- Sell endpoint
+-  "src/lua/endpoints/sell.lua",
+-  -- Use consumable endpoint
+-  "src/lua/endpoints/use.lua",
+-  -- If debug mode is enabled, debugger.lua will load test endpoints
+-}
+-
+--- Enable debug mode
+-if BB_SETTINGS.debug then
+-  assert(SMODS.load_file("src/lua/utils/debugger.lua"))() -- define BB_DEBUG
+-  BB_DEBUG.setup()
+-end
+-
+--- Load core modules
+-assert(SMODS.load_file("src/lua/core/server.lua"))() -- define BB_SERVER
+-assert(SMODS.load_file("src/lua/core/dispatcher.lua"))() -- define BB_DISPATCHER
+-
+--- Load gamestate and errors utilities
+-BB_GAMESTATE = assert(SMODS.load_file("src/lua/utils/gamestate.lua"))()
+-assert(SMODS.load_file("src/lua/utils/errors.lua"))()
+-
+--- Initialize Server
+-local server_success = BB_SERVER.init()
+-if not server_success then
+-  return
+-end
+-
+-local dispatcher_ok = BB_DISPATCHER.init(BB_SERVER, BB_ENDPOINTS)
+-if not dispatcher_ok then
+-  return
+-end
+-
+--- Hook into love.update to run server update loop and detect GAME_OVER
+-local love_update = love.update
+-love.update = function(dt) ---@diagnostic disable-line: duplicate-set-field
+-  -- Check for GAME_OVER before game logic runs
+-  BB_GAMESTATE.check_game_over()
+-  love_update(dt)
++-- BalatroBot v1.5.2 / 9052d76, with reviewed player-visible execution boundaries.
++-- Original attribution and MIT license accompany the transport modules.
++-- Do not load upstream settings, gamestate, actions, save/load or debug tools.
++BB_SETTINGS = {host='127.0.0.1',port=12346,debug=false,render_on_api=false}
++BB_RENDER = nil
++assert(SMODS.load_file('src/lua/utils/errors.lua'))()
++assert(SMODS.load_file('src/lua/core/server.lua'))()
++assert(SMODS.load_file('src/lua/core/dispatcher.lua'))()
++BA_READER = assert(SMODS.load_file('reader/reader.lua'))()
++BA_BINDING = assert(SMODS.load_file('reader/binding.lua'))()
++BA_BINDING.attach(BA_READER)
++BA_EXECUTOR = assert(SMODS.load_file('reader/executor.lua'))()
++BA_EXECUTOR.install_hooks()
++if not BB_SERVER.init() then return end
++if not BB_DISPATCHER.init(BB_SERVER, {'reader/health.lua','reader/snapshot.lua','reader/act_submit.lua','reader/action_status.lua'}) then return end
++local native_update = love.update
++love.update = function(dt)
++  native_update(dt)
++  BA_BINDING.update(BA_READER)
++  BA_EXECUTOR.update()
++  -- Native UI update has completed. Each request executes synchronously here.
+   BB_SERVER.update(BB_DISPATCHER)
+ end
+-
+-sendInfoMessage("BalatroBot loaded - version " .. SMODS.current_mod.version, "BB.BALATROBOT")
++sendInfoMessage('Balatro Agent adapter 0.2.0; upstream release 1.5.2 / manifest 1.5.1', 'BA.ADAPTER')
