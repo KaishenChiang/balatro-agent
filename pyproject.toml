@@ -1,6 +1,6 @@
 [project]
 name = "balatro-agent"
-version = "0.6.4"
+version = "0.6.5"
 description = "Local player-visible Balatro MCP with controlled native execution"
 requires-python = ">=3.13,<3.14"
 license = "MIT"

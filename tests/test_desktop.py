@@ -112,3 +112,28 @@ def test_public_binary_is_bound_to_its_own_source_and_build_receipt(tmp_path):
     assert verify_launcher(tmp_path)
     (tmp_path/'windows/Launcher.cs').write_text('changed source')
     assert not verify_launcher(tmp_path)
+
+
+@pytest.mark.parametrize('text,stage,expected', [
+    ('Uninstalled 6 packages\nExisting Mod/injector installation is preserved; first install refused', 4, '已有配置'),
+    ('Installed 6 packages\nSetup stopped: python.exe exit 1', 4, '请查看详情中的原因'),
+    ('Unresolved or invalid checkpoint', 4, '操作尚未确认'),
+    ('The operation timed out', 1, '下载连接超时'),
+    ('HTTPS download stalled', 1, '下载连接超时'),
+    ('TimeoutError', 4, '本地连接检查超时'),
+])
+def test_desktop_failure_distinguishes_installed_packages_conflicts_and_actual_timeouts(tmp_path, text, stage, expected):
+    if not PS:
+        pytest.skip('Windows PowerShell')
+    source = (ROOT / 'scripts/launcher.ps1').read_text(encoding='utf-8-sig')
+    start = source.index('function Get-PreparationFailureMessage')
+    end = source.index('function Show-PreparationError', start)
+    helper = tmp_path / 'classify.ps1'
+    helper.write_text(source[start:end] + '\nGet-PreparationFailureMessage ' + quote(text) + f' {stage}\n', encoding='utf-8-sig')
+    result = subprocess.run([PS, '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(helper)], capture_output=True, timeout=20)
+    assert result.returncode == 0
+    # Redirected Windows PowerShell text uses the native Windows code page.
+    output = result.stdout.decode('utf-8', errors='replace')
+    if expected not in output:
+        output = result.stdout.decode('gbk', errors='replace')
+    assert expected in output

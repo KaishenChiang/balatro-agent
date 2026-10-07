@@ -12,6 +12,8 @@ EXE启动后台准备窗口，C#源码和构建收据在windows/；旧CMD入口�
 
 游戏未安装时在下载依赖前提示；需要安装或更新时游戏须正常关闭。已有完整的项目安装按账本与构建哈希核验，直接复用；有源码更新时只更新已记录的项目Mod文件。同名冲突、个人修改、部分安装或未决动作保留并报告，不强制覆盖。
 
+重新下载到新目录时，自动准备可接续Codex当前登记的同一项目安装。它核验旧目录的安装账本、固定文件和备份，检查新旧目录均无未决动作且游戏已正常关闭，先备份账本与配置再生成新目录记录；需要时沿用冻结的Mod更新流程。配置只迁移command／cwd两个路径，其他工具、模型、额外环境和个人设置保留。旧目录与检查点保留为历史，不复制动作状态来绕过UNKNOWN。无法证明来源、文件有改动、旧目录丢失或TOML路径写法无法安全迁移时仍停止，不把这些情况误报为网络超时。
+
 由Codex执行或自定路径时，在源码根目录运行：
 
 ```powershell
@@ -73,7 +75,7 @@ $env:UV_PYTHON_INSTALL_DIR = "$PWD/.tools/python"
 
 package要求本次源码检查、开发STDIO、内置固定发行包和最小Mod构建通过，源码哈希保持不变；不以历史游戏胜利作当前版本通过条件。它生成deliverables/github-ready/的纯提交目录、deliverables/source/下的完整离线源码候选ZIP和逐文件清单，移除AGENTS中的本机操作者段落。自有EXE绑定可审查源码与构建收据，vendor只允许锁定的公开原始归档；不带本机运行环境、个人配置、游戏材料、存档、种子、TEST或备份。已有候选／review目录拒绝覆盖，先保全再重新构建。
 
-保留已有Git提交目录时，用`project.py package --output deliverables/github-ready-0.6.4`指定另一个不存在的审核目录。此目录必须位于deliverables/内，不覆盖旧候选或Git历史。
+保留已有Git提交目录时，用`project.py package --output deliverables/github-ready-0.6.5`指定另一个不存在的审核目录。此目录必须位于deliverables/内，不覆盖旧候选或Git历史。
 
 verify-package在新目录用固定缓存离线初始化、重建Mod、核对全部候选文件哈希、运行公开检查和开发STDIO；公开副本缺少私人原生函数时按实际记录跳过。结果同时保留本机完整报告和源码包旁的source-validation.json。源码交付不证明当前版本真实游戏或其他电脑的完整首次安装。
 

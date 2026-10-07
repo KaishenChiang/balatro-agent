@@ -130,7 +130,8 @@ def make_plan(root, backend=None):
 
 def write_atomic(path, data):
     no_links(path)
-    temporary = path.with_name(path.name + '.balatro-update-' + uuid.uuid4().hex + '.tmp')
+    # Keep the same-directory temporary name short at Windows path boundaries.
+    temporary = path.with_name('.' + uuid.uuid4().hex + '.tmp')
     no_links(temporary)
     try:
         with temporary.open('xb') as stream:

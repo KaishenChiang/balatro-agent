@@ -26,7 +26,7 @@ def automatic_layout(install_layout, monkeypatch):
     item.write_text('{"id":"balatrobot"}', encoding='utf-8')
     manifest['files'].append({'path': item.name, 'sha256': digest(item)})
     manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
-    (root / 'pyproject.toml').write_text('[project]\nversion="0.6.3"\n', encoding='utf-8')
+    (root / 'pyproject.toml').write_text('[project]\nname="balatro-agent"\nversion="0.6.3"\n', encoding='utf-8')
     monkeypatch.setattr(onboarding, 'runtime_ready', lambda root: True)
     async def tools(root): return 11
     monkeypatch.setattr(onboarding, 'list_prepared_tools', tools)
@@ -35,6 +35,7 @@ def automatic_layout(install_layout, monkeypatch):
         def __init__(self, config): pass
         def find(self): return None
     monkeypatch.setattr(update_mod, 'WindowsGame', Backend)
+    monkeypatch.setattr(onboarding, 'WindowsGame', Backend)
     return root, steam, library, mods, config
 
 
@@ -133,6 +134,140 @@ def test_foreign_registration_is_preserved(tmp_path):
     before = config.read_bytes()
     with pytest.raises(ValueError, match='differs'): onboarding.ensure_client(tmp_path, config)
     assert config.read_bytes() == before and not (tmp_path / '.artifacts').exists()
+
+
+def downloaded_copy(layout):
+    root, steam, library, mods, config = layout
+    fresh = root.parent / '新下载 folder & bang!'
+    fresh.mkdir()
+    for directory in ('mod', '.artifacts/built-mod'):
+        shutil.copytree(root / directory, fresh / directory)
+    (fresh / 'config').mkdir()
+    shutil.copyfile(root / 'pyproject.toml', fresh / 'pyproject.toml')
+    python = fresh / '.venv/Scripts/python.exe'
+    python.parent.mkdir(parents=True)
+    python.write_bytes(b'synthetic interpreter')
+    return fresh, steam, library, mods, config
+
+
+def test_redownload_adopts_verified_installation_and_changes_only_client_paths(automatic_layout):
+    prepare(automatic_layout)
+    previous, _, _, mods, config = automatic_layout
+    saved = mods.parent / '1/save.jkr'
+    saved.parent.mkdir(parents=True)
+    saved.write_bytes(b'opaque existing save')
+    original = config.read_bytes().replace(b'tool_timeout_sec = 45', b'tool_timeout_sec = 90')
+    original += b'EXTRA_SETTING = "keep"\n'
+    config.write_bytes(original)
+    ledger_before = (previous / 'runs/checks/current-installation.json').read_bytes()
+    protected = {p: p.read_bytes() for p in [saved, *mods.rglob('*')] if p.is_file()}
+    fresh_layout = downloaded_copy(automatic_layout)
+    result = prepare(fresh_layout, preparation_id='new-folder')
+    fresh = fresh_layout[0]
+    assert result['prepared'] and result['reused_installation']
+    assert result['stdio_tools_verified'] == 11 and not result['game_started']
+    assert onboarding.client_ready(fresh, config)
+    expected = original.decode().replace(json.dumps(str(previous / '.venv/Scripts/python.exe')), json.dumps(str(fresh / '.venv/Scripts/python.exe'), ensure_ascii=False))
+    expected = expected.replace(json.dumps(str(previous)), json.dumps(str(fresh), ensure_ascii=False))
+    assert config.read_bytes() == expected.encode()
+    assert all(p.read_bytes() == data for p, data in protected.items())
+    assert (previous / 'runs/checks/current-installation.json').read_bytes() == ledger_before
+    plan = json.loads((fresh / '.artifacts/installation-adoption.local.json').read_text())
+    backup = Path(plan['backup'])
+    assert (backup / 'config-before.toml').read_bytes() == original
+    assert (backup / 'current-installation-before.json').read_bytes() == ledger_before
+    assert prepare(fresh_layout, reuse_only=True)['reused_installation']
+
+
+@pytest.mark.parametrize('damage', ['unknown', 'running', 'installed', 'ledger', 'foreign-client'])
+def test_redownload_preserves_foreign_modified_or_pending_installation(automatic_layout, damage):
+    prepare(automatic_layout)
+    previous, _, _, mods, config = automatic_layout
+    fresh_layout = downloaded_copy(automatic_layout)
+    if damage in ('unknown', 'running'):
+        checkpoint = previous / 'runs/live/executor/checkpoint.json'
+        checkpoint.parent.mkdir(parents=True)
+        checkpoint.write_text(json.dumps({'pending': {'state': damage.upper()}, 'input_pending': None}))
+    elif damage == 'installed':
+        (mods / 'balatrobot/balatrobot.lua').write_bytes(b'personal modification')
+    elif damage == 'ledger':
+        (previous / 'runs/checks/current-installation.json').write_text('{"installed_files":[]}')
+    else:
+        config.write_text(config.read_text().replace('codex_config', 'another-client'))
+    protected = {p: p.read_bytes() for p in [config, *mods.rglob('*')] if p.is_file()}
+    with pytest.raises(ValueError):
+        prepare(fresh_layout)
+    assert all(p.read_bytes() == data for p, data in protected.items())
+    assert not (fresh_layout[0] / 'runs/checks/current-installation.json').exists()
+    assert not (fresh_layout[0] / '.artifacts/installation-adoption.local.json').exists()
+
+
+def test_redownload_updates_owned_runtime_and_can_resume_before_client_relocation(automatic_layout, monkeypatch):
+    prepare(automatic_layout)
+    fresh_layout = downloaded_copy(automatic_layout)
+    fresh, _, _, mods, config = fresh_layout
+    source = fresh / '.artifacts/built-mod/balatrobot/balatrobot.lua'
+    source.write_bytes(b'-- updated public project runtime')
+    manifest_path = fresh / 'mod/build-manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    next(item for item in manifest['files'] if item['path'] == source.name)['sha256'] = digest(source)
+    manifest_path.write_text(json.dumps(manifest))
+    original = config.read_bytes()
+    relocate = onboarding.relocate_registered_client
+    def interrupted(*args):
+        raise RuntimeError('synthetic interruption before registration')
+    monkeypatch.setattr(onboarding, 'relocate_registered_client', interrupted)
+    with pytest.raises(RuntimeError, match='interruption'):
+        prepare(fresh_layout)
+    assert config.read_bytes() == original
+    assert (mods / 'balatrobot/balatrobot.lua').read_bytes() == source.read_bytes()
+    assert len(list((fresh / 'runs/checks').glob('automatic-update-*-applied.json'))) == 1
+    with pytest.raises(onboarding.NeedsPreparation):
+        prepare(fresh_layout, reuse_only=True)
+    monkeypatch.setattr(onboarding, 'relocate_registered_client', relocate)
+    assert prepare(fresh_layout)['prepared']
+    assert onboarding.client_ready(fresh, config)
+    assert len(list((fresh / 'runs/checks').glob('automatic-update-*-applied.json'))) == 1
+
+
+def test_redownload_checks_old_unknown_again_at_registration_boundary(automatic_layout, monkeypatch):
+    prepare(automatic_layout)
+    fresh_layout = downloaded_copy(automatic_layout)
+    original = fresh_layout[-1].read_bytes()
+    previous = automatic_layout[0]
+    relocate = onboarding.relocate_registered_client
+    def pending(*args):
+        checkpoint = previous / 'runs/live/executor/checkpoint.json'
+        checkpoint.parent.mkdir(parents=True)
+        checkpoint.write_text('{"pending":{"state":"UNKNOWN"},"input_pending":null}')
+        return relocate(*args)
+    monkeypatch.setattr(onboarding, 'relocate_registered_client', pending)
+    with pytest.raises(ValueError, match='checkpoint'):
+        prepare(fresh_layout)
+    assert fresh_layout[-1].read_bytes() == original
+    assert not (fresh_layout[0] / '.artifacts/onboarding.local.json').exists()
+
+
+@pytest.mark.parametrize('style', ['crlf-bom', 'quoted-header', 'unsupported-multiline'])
+def test_client_relocation_preserves_comments_settings_and_rejects_unsupported_toml(tmp_path, style):
+    previous, fresh = tmp_path / 'previous', tmp_path / '新 copy'
+    config = tmp_path / 'config.toml'
+    onboarding.ensure_client(previous, config)
+    before = config.read_bytes().replace(b'command = ', b'  command = ').replace(b'tool_timeout_sec = 45', b'tool_timeout_sec = 123 # keep timeout')
+    if style == 'crlf-bom':
+        before = b'\xef\xbb\xbf' + before.replace(b'\n', b'\r\n')
+    elif style == 'quoted-header':
+        before = before.replace(b'[mcp_servers.balatro-agent]', b'[mcp_servers."balatro-agent"] # keep heading')
+    else:
+        value = json.dumps(str(previous))
+        before = before.replace(('cwd = ' + value).encode(), ('cwd = """' + str(previous).replace('\\', '\\\\') + '"""').encode())
+        with pytest.raises(ValueError, match='safely'):
+            onboarding.relocated_client_bytes(before, previous, fresh)
+        return
+    candidate = onboarding.relocated_client_bytes(before, previous, fresh)
+    expected = before.replace(json.dumps(str(previous / '.venv/Scripts/python.exe')).encode(), json.dumps(str(fresh / '.venv/Scripts/python.exe'), ensure_ascii=False).encode())
+    expected = expected.replace(json.dumps(str(previous)).encode(), json.dumps(str(fresh), ensure_ascii=False).encode())
+    assert candidate == expected
 
 
 def test_equivalent_path_spellings_and_extra_settings_are_preserved(tmp_path):

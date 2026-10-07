@@ -44,6 +44,6 @@
   ],
   "offline_runtime": {
     "manifest": "config/runtime.lock.json",
-    "sha256": "bd8beeb7a01dfe9491cdf0d75f52eb3939e003a54157113b62ab8c6974a14b71"
+    "sha256": "254e5109c06f8711b8b54552c9a02752a3346eacae1f6eaebd397dbec059c745"
   }
 }

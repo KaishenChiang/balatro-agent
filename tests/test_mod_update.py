@@ -19,6 +19,16 @@ class Backend:
         return object() if self.open_at and self.calls >= self.open_at else None
 
 
+def test_atomic_installation_record_below_windows_path_limit(tmp_path):
+    parent = tmp_path / ('p' * max(1, 210 - len(str(tmp_path)) - 1))
+    parent.mkdir()
+    target = parent / 'installation-adoption.local.json'
+    updater.write_atomic(target, b'first verified record')
+    updater.write_atomic(target, b'updated verified record')
+    assert target.read_bytes() == b'updated verified record'
+    assert list(parent.iterdir()) == [target]
+
+
 @pytest.fixture
 def layout(tmp_path, monkeypatch):
     root = tmp_path / 'checkout'

@@ -138,16 +138,25 @@ function Complete-Preparation {
     $form.ActiveControl = $open
 }
 
+function Get-PreparationFailureMessage([string]$Text, [int]$Stage = 0) {
+    if ($Text -match 'No unique verified Steam Balatro') { return '未找到唯一的 Steam 版小丑牌，请查看详情。' }
+    if ($Text -match 'Close Balatro normally|normally closed') { return '请正常关闭小丑牌，然后重试。' }
+    if ($Text -match 'checkpoint|Unresolved') { return '上一会话的操作尚未确认，请查看详情。' }
+    if ($Text -match 'Mod/injector|receipt|differs|existing|Existing|adoption|registration') { return '已有配置或安装需要核对，请查看详情。' }
+    if ($Text -match '\btimed out\b|\btimeout(?:error)?\b|超时|\bstalled\b|HTTPS download|remote server|远程服务器') {
+        if ($Stage -eq 4) { return '本地连接检查超时，请查看详情后重试。' }
+        return '下载连接超时。检查网络或系统代理后重试。'
+    }
+    return '请查看详情中的原因，处理后重试。'
+}
+
 function Show-PreparationError {
     $script:desktopError = $_.Exception.Message
     $timer.Stop(); $progress.Visible = $false
     $status.Text = '准备暂未完成'; $status.ForeColor = [Drawing.Color]::FromArgb(173, 66, 51)
     $errorText = (Read-SharedLog $script:stderrPath) + $script:desktopError
-    $detail.Text = if ($errorText -match 'No unique verified Steam Balatro') { '未找到唯一的 Steam 版小丑牌，请查看详情。' }
-        elseif ($errorText -match 'Close Balatro normally|normally closed') { '请正常关闭小丑牌，然后重试。' }
-        elseif ($errorText -match 'timed out|timeout|超时|stalled|HTTPS download|remote server|远程服务器') { '下载连接超时。检查网络或系统代理后重试。' }
-        elseif ($errorText -match 'checkpoint|Unresolved|receipt|differs|existing|Existing') { '已有配置或安装需要核对，请查看详情。' }
-        else { '请查看详情中的原因，处理后重试。' }
+    $failureStage = if ((Read-SharedLog $script:stdoutPath) -match '4/4') { 4 } else { 0 }
+    $detail.Text = Get-PreparationFailureMessage $errorText $failureStage
     $retry.Enabled = $true; $retry.Visible = $true
 }
 

@@ -5,14 +5,15 @@ import importlib.metadata
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import tomllib
 import uuid
 
-from balatro_agent.windows_game import Installation
+from balatro_agent.windows_game import Installation, WindowsGame
 from install_portable import TOOLS, installation_paths, prepare_installation
 from bootstrap_sources import digest, no_links
-from update_mod import read_json, run as update_runtime, write_atomic, relative_file
+from update_mod import ensure_idle, read_json, run as update_runtime, write_atomic, relative_file
 
 
 class NeedsPreparation(Exception):
@@ -79,6 +80,137 @@ def ensure_client(root, config):
     write_atomic(config, candidate.encode('utf-8'))
     if not client_ready(root, config):
         raise ValueError('Client registration verification failed')
+
+
+def relocated_client_bytes(before, previous, root):
+    """Change only the two registered project paths, preserving other TOML bytes."""
+    text = before.decode('utf-8-sig')
+    parsed = tomllib.loads(text)
+    expected = tomllib.loads(text)
+    expected['mcp_servers']['balatro-agent'].update(
+        command=client_entry(root)['command'], cwd=str(root))
+    headers = list(re.finditer(
+        r"(?m)^\[mcp_servers\.(?:balatro-agent|\"balatro-agent\"|'balatro-agent')\][ \t]*(?:#[^\r\n]*)?\r?$", text))
+    if len(headers) != 1:
+        raise ValueError('Existing client paths cannot safely be updated; preserve the configuration')
+    start = headers[0].end()
+    following = re.search(r'(?m)^[ \t]*\[', text[start:])
+    end = start + following.start() if following else len(text)
+    block = text[start:end]
+    for key, value in [('command', client_entry(root)['command']), ('cwd', str(root))]:
+        pattern = re.compile(r"(?m)^([ \t]*" + key + r"[ \t]*=[ \t]*)(\"(?:[^\"\\\r\n]|\\.)*\"|'[^'\r\n]*')([ \t]*(?:#[^\r\n]*)?\r?$)")
+        matches = list(pattern.finditer(block))
+        if len(matches) != 1:
+            raise ValueError('Existing client paths cannot safely be updated; preserve the configuration')
+        match = matches[0]
+        block = block[:match.start(2)] + json.dumps(value, ensure_ascii=False) + block[match.end(2):]
+    result = text[:start] + block + text[end:]
+    if tomllib.loads(result) != expected or Path(parsed['mcp_servers']['balatro-agent']['cwd']) != previous:
+        raise ValueError('Unrelated client configuration changed')
+    return (b'\xef\xbb\xbf' if before.startswith(b'\xef\xbb\xbf') else b'') + result.encode('utf-8')
+
+
+def pending_adoption(root, config):
+    path = root / '.artifacts/installation-adoption.local.json'
+    if not path.exists():
+        return None
+    plan = read_json(path)
+    if plan.get('schema') != 'existing-installation-adoption-1' or Path(plan['root']) != root or Path(plan['config']) != config:
+        raise ValueError('Recorded installation adoption paths changed; preserve the record')
+    previous = Path(plan['previous_root'])
+    no_links(previous)
+    if previous == root or not client_ready(previous, config):
+        raise ValueError('Previous client registration changed; preserve the adoption record')
+    backup = Path(plan['backup'])
+    if not backup.is_relative_to(root / '.artifacts/backups'):
+        raise ValueError('Unexpected installation adoption backup')
+    manifest = read_json(backup / 'manifest.json')
+    if manifest.get('verified') is not True:
+        raise ValueError('Installation adoption backup is unverified')
+    for item in manifest['files']:
+        target = backup / relative_file(item['relative'])
+        if digest(target) != item['sha256']:
+            raise ValueError('Installation adoption backup changed; preserve it')
+    ledger = previous / 'runs/checks/current-installation.json'
+    if digest(ledger) != plan['previous_ledger_sha256'] or digest(backup / 'current-installation-before.json') != plan['previous_ledger_sha256']:
+        raise ValueError('Previous installation record changed; preserve the adoption record')
+    if digest(config) != plan['config_before_sha256'] or digest(backup / 'config-before.toml') != plan['config_before_sha256']:
+        raise ValueError('Client configuration changed during adoption; preserve it')
+    ensure_idle(previous, WindowsGame(previous / 'config/game-lifecycle.local.json'))
+    return plan
+
+
+def adopt_registered_installation(root, steam, library, mods, config):
+    """Reuse only an idle, hash-verified installation belonging to the registered project."""
+    parsed = tomllib.loads(config.read_text(encoding='utf-8-sig')) if config.exists() else {}
+    entry = parsed.get('mcp_servers', {}).get('balatro-agent')
+    if not isinstance(entry, dict) or not isinstance(entry.get('cwd'), str):
+        return None
+    previous = Path(entry['cwd']).absolute()
+    if previous == root:
+        return None
+    no_links(previous)
+    if not client_ready(previous, config):
+        raise ValueError('Previous project registration could not be verified')
+    project_path = previous / 'pyproject.toml'
+    no_links(project_path)
+    if not project_path.is_file() or tomllib.loads(project_path.read_text(encoding='utf-8'))['project'].get('name') != 'balatro-agent':
+        raise ValueError('Previous registered project is unavailable; preserve existing Mods and configuration')
+    if installation_paths(previous) != (steam, library):
+        raise ValueError('Previous installation paths changed; preserve the installation')
+    entries = recorded_installation(previous, steam, library, mods)
+    ledger = previous / 'runs/checks/current-installation.json'
+    if entries is None or not ledger.is_file():
+        raise ValueError('Previous installation record is unavailable; preserve existing Mods')
+    backend = WindowsGame(previous / 'config/game-lifecycle.local.json')
+    ensure_idle(previous, backend)
+    ensure_idle(root, backend)
+    before = config.read_bytes()
+    relocated_client_bytes(before, previous, root)  # Refuse unsupported TOML before writing metadata.
+    plan = pending_adoption(root, config)
+    if plan is None:
+        backup = root / '.artifacts/backups' / ('installation-adoption-' + uuid.uuid4().hex)
+        no_links(backup)
+        backup.mkdir(parents=True)
+        originals = [('current-installation-before.json', ledger.read_bytes()), ('config-before.toml', before)]
+        for relative, data in originals:
+            (backup / relative).write_bytes(data)
+            if (backup / relative).read_bytes() != data:
+                raise ValueError('Installation adoption backup verification failed')
+        write_atomic(backup / 'manifest.json', json.dumps({'verified': True, 'files': [
+            {'relative': name, 'sha256': digest(backup / name)} for name, _ in originals]}).encode())
+        plan = {'schema': 'existing-installation-adoption-1', 'root': str(root),
+            'previous_root': str(previous), 'config': str(config), 'backup': str(backup),
+            'previous_ledger_sha256': digest(backup / 'current-installation-before.json'),
+            'config_before_sha256': digest(backup / 'config-before.toml'),
+            'installed_files_verified': len(entries), 'game_started': False}
+        write_atomic(root / '.artifacts/installation-adoption.local.json', (json.dumps(plan, indent=2) + '\n').encode())
+    # Recheck the original ownership, checkpoints and all installed bytes after backup.
+    pending_adoption(root, config)
+    if recorded_installation(previous, steam, library, mods) != entries:
+        raise ValueError('Installed files changed during adoption')
+    ensure_idle(root, backend)
+    lifecycle = root / 'config/game-lifecycle.local.json'
+    no_links(lifecycle)
+    settings = {'steam_dir': str(steam), 'library_dir': str(library)}
+    if lifecycle.exists() and read_json(lifecycle) != settings:
+        raise ValueError('Existing lifecycle config differs; preserve it')
+    if not lifecycle.exists():
+        write_atomic(lifecycle, (json.dumps(settings, indent=2) + '\n').encode())
+    save_ledger(root, entries)
+    return plan
+
+
+def relocate_registered_client(root, config, plan):
+    pending_adoption(root, config)
+    ensure_idle(root, WindowsGame(root / 'config/game-lifecycle.local.json'))
+    before = config.read_bytes()
+    candidate = relocated_client_bytes(before, Path(plan['previous_root']), root)
+    if digest(config) != plan['config_before_sha256']:
+        raise ValueError('Client configuration changed at the adoption boundary')
+    write_atomic(config, candidate)
+    if not client_ready(root, config):
+        raise ValueError('Relocated client registration verification failed')
 
 
 def runtime_ready(root):
@@ -179,22 +311,44 @@ def prepare(root, *, steam_dir=None, library_dir=None, mods=None, config=None,
         raise NeedsPreparation('Project-local Python and locked dependencies need preparation')
     entries = recorded_installation(root, steam, library, mods)
     reused = entries is not None
+    adoption = None
     if reuse_only:
-        if entries is None or not client_ready(root, config) or not build_matches_install(root, mods):
+        if entries is None:
             raise NeedsPreparation('Local installation needs preparation')
-    elif entries is None:
-        prepare_installation(root, steam, library, mods, config)
-        prepare_installation(root, steam, library, mods, config, True)
-        entries = recorded_installation(root, steam, library, mods)
-        save_ledger(root, entries)
+        try:
+            registered = client_ready(root, config)
+        except ValueError:
+            if pending_adoption(root, config) is None:
+                raise
+            raise NeedsPreparation('Verified installation adoption needs completion')
+        if not registered or not build_matches_install(root, mods):
+            raise NeedsPreparation('Local installation needs preparation')
     else:
-        client_ready(root, config)  # Reject conflicts before changing runtime.
+        if entries is None:
+            adoption = adopt_registered_installation(root, steam, library, mods, config)
+            if adoption is None:
+                prepare_installation(root, steam, library, mods, config)
+                prepare_installation(root, steam, library, mods, config, True)
+                entries = recorded_installation(root, steam, library, mods)
+                save_ledger(root, entries)
+            else:
+                entries = recorded_installation(root, steam, library, mods)
+                reused = True
+        if adoption is None:
+            entry = tomllib.loads(config.read_text(encoding='utf-8-sig')).get('mcp_servers', {}).get('balatro-agent') if config.exists() else None
+            if isinstance(entry, dict) and Path(entry.get('cwd', '')) != root:
+                adoption = pending_adoption(root, config)
+        if adoption is None:
+            client_ready(root, config)  # Reject conflicts before changing runtime.
         if not build_matches_install(root, mods):
             save_ledger(root, entries)
             output = 'runs/checks/automatic-update-' + uuid.uuid4().hex + '.json'
             update_runtime(root, output)
             update_runtime(root, output, True)
-        ensure_client(root, config)
+        if adoption is not None:
+            relocate_registered_client(root, config, adoption)
+        else:
+            ensure_client(root, config)
     entries = recorded_installation(root, steam, library, mods)
     if not client_ready(root, config) or not build_matches_install(root, mods):
         raise ValueError('Final preparation verification failed')
