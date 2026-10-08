@@ -293,3 +293,27 @@ def test_nested_baseline_and_local_roots_are_rejected_without_creating_files(tmp
         with pytest.raises(ValueError, match='unsafe_path'):
             NotesStore(local, baseline_root=base)
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('tool,explicit_view', [('read_notes', None), ('write_note', None), ('write_note', 'content')])
+def test_independent_verifier_accepts_current_default_content_receipts(tmp_path, monkeypatch, tool, explicit_view):
+    root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location('synthetic_default_disk_check', root/'scripts/check_notes_persistence.py')
+    disk_check = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(disk_check)
+    store = NotesStore(tmp_path/'runs/local-experience', baseline_root=tmp_path/'experience')
+    commit(store, 'synthetic default content receipt')
+    read = store.read(note_ids=['EXP-SYNTHETIC'], view='content')
+    delivered = read if tool == 'read_notes' else {'status': 'ok', 'write_state': 'COMMITTED', 'note': read['notes'][0]}
+    parameters = {} if explicit_view is None else {'view': explicit_view}
+    evidence = tmp_path/'runs/checks/codex-mcp-experience-synthetic-default.jsonl'
+    evidence.parent.mkdir(parents=True, exist_ok=True)
+    evidence.write_text('\n'.join(json.dumps(row) for row in [
+        {'evidence_type': 'codex_actual_mcp_construction', 'formal_game': False, 'synthetic_fixture': True},
+        {'tool': tool, 'parameters': parameters, 'result': delivered}])+'\n', encoding='utf-8')
+    monkeypatch.setattr(disk_check, 'ROOT', tmp_path)
+    monkeypatch.setattr(sys, 'argv', ['disk-check', '--kind', 'experience', '--note-id', 'EXP-SYNTHETIC',
+        '--revision', '1', '--evidence', str(evidence.relative_to(tmp_path)), '--output', 'runs/checks/default-disk.json'])
+    disk_check.main()
+    report = json.loads((evidence.parent/'default-disk.json').read_text(encoding='utf-8'))
+    assert report['disk_matches_actual_delivery'] and not report['counts_as_formal_experience']

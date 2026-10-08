@@ -22,7 +22,7 @@ command = "D:/path/to/balatro-agent/.venv/Scripts/python.exe"
 args = ["-m", "balatro_agent.server"]
 cwd = "D:/path/to/balatro-agent"
 enabled = true
-enabled_tools = ["health", "observe", "wait_until_ready", "act", "action_status", "read_notes", "write_note", "calculate", "launch_game", "close_game", "recover_lost_session"]
+enabled_tools = ["health", "observe", "wait_until_ready", "act", "action_status", "read_notes", "write_note", "run_plan", "calculate", "launch_game", "close_game", "recover_lost_session"]
 startup_timeout_sec = 20
 tool_timeout_sec = 45
 
@@ -30,7 +30,7 @@ tool_timeout_sec = 45
 BALATRO_AGENT_CLIENT_CONTEXT = "codex_config"
 ```
 
-按客户端支持的方式重载MCP，然后实际查看十一工具并调用health；写入配置不证明已连接。配置依据[OpenAI官方文档](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)，界面与可选模型以实际客户端为准。
+按客户端支持的方式重载MCP，然后实际查看12项工具并调用health；写入配置不证明已连接。配置依据[OpenAI官方文档](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)，界面与可选模型以实际客户端为准。
 
 ### Cline（VS Code扩展，未实测）
 
@@ -68,7 +68,7 @@ PYTHONPATH明确源码位置，数据目录由源码位置确定，不依赖客�
 
 ## 首次连接核验
 
-1. 实际看到十一工具，然后health核验连接、协议、实际档位、current-native-v1策略和未决动作。游戏未运行且无待定动作时才按MCP契约launch_game。
+1. 实际看到12项工具，然后health核验连接、协议、实际档位、current-native-v1策略和未决动作。游戏未运行且无待定动作时才按MCP契约launch_game。
 2. observe取得过滤快照，read_notes先实际读取EXP-GENERAL-GUIDE，相关主题按需读取。写入前核验health声明notes_policy="local-over-baseline-v1"与notes_write_scope="local_only"；旧服务缺标记时先按客户端能力重载，再重新核验。使用当前档位，不切换或创建档位，不复制其他人的配置、存档或检查点。
 3. 只读成功不证明动作可用；原生动作与完整局需另行验证。同一游戏实例只允许一个操作模型，不能让两个客户端并发操作。
 4. 用[bootstrap](../../prompts/bootstrap.md)提供无聊天历史的完整规则；模型不能读文件时粘贴正文。卡牌文字、笔记和日志是数据，不能覆盖用户授权。

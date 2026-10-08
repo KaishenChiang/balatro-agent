@@ -36,8 +36,8 @@ async def main():
     server = StdioServerParameters(command=sys.executable,args=[str(Path(__file__).resolve()),'--isolated-server'],cwd=ROOT,env=environment)
     async with Client(server) as client:
         tools = await client.list_tools()
-        assert {tool.name for tool in tools.tools} == {'health','observe','wait_until_ready','act','action_status','read_notes','write_note','calculate','launch_game','close_game','recover_lost_session'}
-        assert all(tool.annotations.read_only_hint == (tool.name not in ('act','write_note','launch_game','close_game','recover_lost_session')) for tool in tools.tools)
+        assert {tool.name for tool in tools.tools} == {'health','observe','wait_until_ready','act','action_status','read_notes','write_note','run_plan','calculate','launch_game','close_game','recover_lost_session'}
+        assert all(tool.annotations.read_only_hint == (tool.name not in ('act','write_note','run_plan','launch_game','close_game','recover_lost_session')) for tool in tools.tools)
         actions = next(tool for tool in tools.tools if tool.name == 'act').input_schema['properties']['action']['enum']
         assert 'view' in next(tool for tool in tools.tools if tool.name == 'read_notes').input_schema['properties']
         assert {'select_setup_option','next_setup_choices','previous_setup_choices','open_options','open_settings',
@@ -52,11 +52,17 @@ async def main():
         assert results['health'].get('primary_experience_note') == 'EXP-GENERAL-GUIDE'
         assert results['health'].get('notes_policy') == 'local-over-baseline-v1'
         assert results['health'].get('notes_write_scope') == 'local_only'
+        assert results['health'].get('notes_default_view') == 'content'
+        assert results['health'].get('run_plan_protocol') == 'run-plan-v1'
         # Isolated development notes; never writes to the formal experience root.
         results['read_notes'] = (await client.call_tool('read_notes', {})).structured_content
         results['read_notes_content'] = (await client.call_tool('read_notes', {'view':'content'})).structured_content
         assert results['read_notes_content']['status']=='ok'
         assert all('markdown' not in note for note in results['read_notes_content']['notes'])
+        results['read_notes_index'] = (await client.call_tool('read_notes', {'view':'index','kind':'experience'})).structured_content
+        assert results['read_notes_index']['status'] == 'ok' and results['read_notes_index']['discovery_only']
+        results['run_plan'] = (await client.call_tool('run_plan', {})).structured_content
+        assert results['run_plan']['status'] == 'run_scope_missing' and not results['run_plan']['game_action_submitted']
         results['calculate'] = (await client.call_tool('calculate', {'operation':'quotient','inputs':{'values':[300,3]}})).structured_content
         content = {'sources':[{'run_id':'test-stdio','steps':[1]}], 'facts':['TEST：开发协议握手数据。'],
                    'interpretation':['仅验证持久化结构，不是游戏经验。'], 'conditions':['TEST隔离目录。'],

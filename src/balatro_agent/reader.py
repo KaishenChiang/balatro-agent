@@ -10,6 +10,8 @@ from .contract import ADAPTER_VERSION, SCHEMA_VERSION, POLICY_VERSION, UPSTREAM_
 from .policy import canonical, observation_id, project
 from .settings import Settings
 from .transport import GameClient, ReaderError
+from .compact import present, VIEWS
+from .polling import poll_delay
 
 ERRORS = {
     "disconnected": "游戏读取接口未连接。",
@@ -22,6 +24,7 @@ ERRORS = {
     "invalid_timeout": "timeout_s 必须是 0–30 秒内的有限数值。",
     "internal_error": "只读服务内部检查失败；未导出原始异常。",
     "log_unavailable": "安全读取记录未能写入；本次观察未交付。",
+    "invalid_view": "view 仅支持 compact 或 full；没有读取或执行游戏动作。",
 }
 
 
@@ -38,6 +41,8 @@ class Reader:
         self._log_file = self.settings.log_dir / ("reader-" + uuid.uuid4().hex + ".jsonl")
         self._tool_lock = asyncio.Lock()
         self._observation_profiles = {}
+        self.last_delivered_observation = None
+        self.plans = None
 
     async def _envelope(self, method: str, timeout_s: float | None = None) -> Envelope:
         raw = await self.client.read(method, timeout_s or self.settings.request_timeout_s)
@@ -92,18 +97,33 @@ class Reader:
         with self._log_file.open("a", encoding="utf-8") as handle:
             handle.write(canonical(row) + "\n")
 
-    def _deliver(self, tool: str, result: dict) -> dict:
+    def remember_observation(self, observation):
+        previous = self.last_delivered_observation
+        if previous is not None:
+            current_id = observation['observation_id'].split('-')
+            previous_id = previous['observation_id'].split('-')
+            if current_id[1] == previous_id[1] and int(current_id[2]) < int(previous_id[2]):
+                return  # A cached action receipt is history, not a new decision point.
+        self.last_delivered_observation = observation
+
+    def _deliver(self, tool: str, result: dict, view='full') -> dict:
         if "observation" in result:
             # Service wall clock is outside the public game state and its ID.
             # It enables per-run reporting without another game data source.
             sampled = datetime.now(timezone.utc)
             result = {**result, "server_time": {"utc": sampled.isoformat(), "unix_s": sampled.timestamp()}}
+        observation = result.get('observation')
+        if self.plans is not None:
+            result = self.plans.attach(result)
+        result = present(result, view)
         try:
             self._record_delivered(tool, result)
         except OSError:
             # Filesystem error messages may include arbitrary path contents.
             # Fail closed rather than hand back an unrecorded observation.
             return error_result("log_unavailable")
+        if observation is not None:
+            self.remember_observation(observation)
         return result
 
     async def health(self) -> dict:
@@ -128,27 +148,34 @@ class Reader:
                 result["connected"] = exc.code not in ("disconnected", "request_timeout")
             except Exception:
                 result = error_result("internal_error")
-            result['notes_read_views'] = ['full', 'content']
+            result['notes_read_views'] = ['content', 'index', 'full']
+            result['observation_views'] = ['compact', 'full']
+            result['observation_encoding'] = 'columns-v1'
             return self._deliver("health", result)
 
-    async def observe(self) -> dict:
+    async def observe(self, view='full') -> dict:
         async with self._tool_lock:
+            if view not in VIEWS:
+                return self._deliver('observe', error_result('invalid_view'))
             try:
                 result = await self._observe()
             except ReaderError as exc:
                 result = error_result(exc.code)
             except Exception:
                 result = error_result("internal_error")
-            return self._deliver("observe", result)
+            return self._deliver("observe", result, view)
 
-    async def wait_until_ready(self, timeout_s: float = 10.0) -> dict:
+    async def wait_until_ready(self, timeout_s: float = 10.0, view='full') -> dict:
         async with self._tool_lock:
+            if view not in VIEWS:
+                return self._deliver('wait_until_ready', error_result('invalid_view'))
             import math
             if isinstance(timeout_s, bool) or not isinstance(timeout_s, (float, int)) or not math.isfinite(timeout_s) or not 0 <= timeout_s <= 30:
                 result = error_result("invalid_timeout")
             else:
                 deadline = time.monotonic() + timeout_s
                 latest = None
+                poll_count = 0
                 try:
                     while True:
                         remaining = deadline - time.monotonic()
@@ -162,11 +189,12 @@ class Reader:
                         if latest["observation"]["ready"]:
                             result = {**latest, "status": "ready"}
                             break
-                        await asyncio.sleep(min(self.settings.poll_interval_s, max(0, deadline - time.monotonic())))
+                        await asyncio.sleep(min(poll_delay(poll_count, self.settings.poll_interval_s), max(0, deadline - time.monotonic())))
+                        poll_count += 1
                 except ReaderError as exc:
                     result = error_result(exc.code)
                     if latest is not None and latest.get("observation") is not None:
                         result["last_observation"] = latest["observation"]
                 except Exception:
                     result = error_result("internal_error")
-            return self._deliver("wait_until_ready", result)
+            return self._deliver("wait_until_ready", result, view)

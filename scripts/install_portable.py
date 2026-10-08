@@ -18,7 +18,7 @@ from bootstrap_sources import no_links, digest, fetch, unpack
 from update_mod import ensure_idle
 
 ROOT=Path(__file__).resolve().parents[1]
-TOOLS=['health','observe','wait_until_ready','act','action_status','read_notes','write_note','calculate','launch_game','close_game','recover_lost_session']
+TOOLS=['health','observe','wait_until_ready','act','action_status','read_notes','write_note','run_plan','calculate','launch_game','close_game','recover_lost_session']
 
 
 def installation_paths(root,steam_dir=None,library_dir=None):

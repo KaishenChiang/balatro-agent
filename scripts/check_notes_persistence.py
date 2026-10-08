@@ -48,11 +48,15 @@ def main():
         result=row.get('result',{})
         if result.get('status') != 'ok':
             continue
-        view = row.get('parameters', {}).get('view', 'full') if row.get('tool') == 'read_notes' else 'full'
         if row.get('tool') == 'write_note' and result.get('write_state') != 'COMMITTED':
             continue
         delivered=result.get('notes',[]) if row.get('tool')=='read_notes' else [result.get('note',{})] if row.get('tool')=='write_note' else []
         for note in delivered:
+            parameters = row.get('parameters', {})
+            # Historical defaults returned full; current read and write defaults
+            # return content. Either has the same independently verified identity.
+            # An explicitly requested view must still match its exact field set.
+            view = parameters['view'] if 'view' in parameters else 'full' if 'markdown' in note else 'content'
             if matches_delivery(note, disk, view):
                 matches.append(index)
     assert matches, 'No matching actual delivered note.'

@@ -48,7 +48,7 @@ def test_link_encodes_exact_project_and_short_prompt_without_sending(tmp_path, n
 
 
 @pytest.mark.parametrize('mode', ['supported', 'missing_protocol', 'failed_dispatch', 'missing_app'])
-def test_launcher_uses_project_link_or_copies_full_prompt_without_real_dispatch(tmp_path, mode):
+def test_launcher_closes_after_project_dispatch_and_retains_fallback(tmp_path, mode):
     source = (ROOT / 'scripts/launcher.ps1').read_text(encoding='utf-8-sig')
     begin = source.index('function Open-Codex')
     end = source.index('$ink =', begin)
@@ -56,7 +56,8 @@ def test_launcher_uses_project_link_or_copies_full_prompt_without_real_dispatch(
     helper.write_text(source[begin:end], encoding='utf-8-sig')
     command = '. ' + quote(helper) + ';'
     command += "$codexLink='codex://threads/new?path=encoded&prompt=encoded';$promptText='complete rules';"
-    command += "$detail=[pscustomobject]@{Text=''};$script:desktopError='';$script:copied=$false;$script:requests=@();$script:refreshed=$false;"
+    command += "$detail=[pscustomobject]@{Text=''};$script:desktopError='';$script:copied=$false;$script:requests=@();$script:refreshed=$false;$script:closed=$false;$script:events=@();"
+    command += "$form=New-Object PSObject;Add-Member -InputObject $form -MemberType ScriptMethod -Name Close -Value {$script:closed=$true;$script:events+='close'};"
     command += "$fixtureProtocol=New-Object PSObject;Add-Member -InputObject $fixtureProtocol -MemberType ScriptMethod -Name GetValueNames -Value {@('URL Protocol')};"
     command += "function Update-PlayPrompt {$script:refreshed=$true};function Copy-PlayPrompt {$script:copied=$true};"
     command += 'function Get-Item {param($LiteralPath,$ErrorAction)'
@@ -66,8 +67,8 @@ def test_launcher_uses_project_link_or_copies_full_prompt_without_real_dispatch(
     command += 'function Start-Process {param($FilePath,$ArgumentList,$WindowStyle)'
     if mode == 'failed_dispatch':
         command += "if($FilePath -like 'codex:*'){throw 'fixture dispatch failure'};"
-    command += '$script:requests+=@{path=$FilePath;arguments=$ArgumentList;window=$WindowStyle}};'
-    command += 'Open-Codex;@{copied=$script:copied;requests=$script:requests;detail=$detail.Text;refreshed=$script:refreshed}|ConvertTo-Json -Depth 4'
+    command += "$script:requests+=@{path=$FilePath;arguments=$ArgumentList;window=$WindowStyle};$script:events+='dispatch'};"
+    command += 'Open-Codex;@{copied=$script:copied;requests=$script:requests;detail=$detail.Text;refreshed=$script:refreshed;closed=$script:closed;events=$script:events}|ConvertTo-Json -Depth 4'
     value = run_ps(command)
     assert value['refreshed']
     assert len(value['requests']) == 1
@@ -76,8 +77,10 @@ def test_launcher_uses_project_link_or_copies_full_prompt_without_real_dispatch(
     if mode == 'supported':
         assert request['path'] == 'codex://threads/new?path=encoded&prompt=encoded'
         assert not value['copied'] and '填入提示' in value['detail']
+        assert value['closed'] and value['events'] == ['dispatch', 'close']
     else:
         assert value['copied']
+        assert not value['closed'] and value['events'] == ['dispatch']
         if mode == 'missing_app':
             assert request['path'] == 'https://developers.openai.com/codex/app/'
         else:

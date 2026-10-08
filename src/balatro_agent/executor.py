@@ -12,6 +12,8 @@ from .policy import canonical
 from .reader import Reader
 from .transport import ReaderError
 from .installation_registry import RegistrationGuard
+from .compact import present, VIEWS
+from .polling import poll_delay
 
 
 def rejection(reason, action_id=None):
@@ -117,7 +119,12 @@ class Executor:
         return {'state': 'UNKNOWN', 'reason': reason, 'action_id': req['action_id'],
                 'observation_id': req['observation_id'], 'submitted': None, 'read_only': False}
 
-    def _deliver(self, tool, result, *, restore_request=None, restore_input=False):
+    def _deliver(self, tool, result, *, restore_request=None, restore_input=False, view='full'):
+        observation = result.get('observation')
+        plans = getattr(self.reader, 'plans', None)
+        if plans is not None:
+            result = plans.attach(result, restore_request)
+        result = present(result, view)
         try:
             self._record('delivered_'+tool, result)
         except OSError:
@@ -135,6 +142,8 @@ class Executor:
                     self.checkpoint_broken = True
             return {**self._unknown(result, 'log_unavailable'), 'submitted': result.get('submitted'),
                     'read_only': result.get('read_only', False)}
+        if observation is not None:
+            self.reader.remember_observation(observation)
         return result
 
     async def _query(self, action_id):
@@ -160,7 +169,9 @@ class Executor:
                 setattr(self, attribute, saved)
                 raise
 
-    async def act(self, action, parameters, observation_id, action_id, reason, experience_refs):
+    async def act(self, action, parameters, observation_id, action_id, reason, experience_refs, view='full'):
+        if view not in VIEWS:
+            return self._deliver('act', rejection('invalid_request'))
         try:
             req = ActionRequest.model_validate(dict(action=action, parameters=parameters, observation_id=observation_id,
                       action_id=action_id, reason=reason, experience_refs=experience_refs)).model_dump()
@@ -180,7 +191,7 @@ class Executor:
                 return self._deliver('act', rejection('checkpoint_unavailable', req['action_id']))
             if self.input_pending:
                 if canonical(req) == canonical(self.input_pending):
-                    return await self._status_locked(req['action_id'])
+                    return await self._status_locked(req['action_id'], view=view)
                 if req['action_id'] == self.input_pending['action_id']:
                     return self._deliver('act', rejection('id_conflict', req['action_id']))
                 return self._deliver('act', rejection('action_busy', req['action_id']))
@@ -188,7 +199,7 @@ class Executor:
             if self.pending:
                 if canonical(req) == canonical(self.pending):
                     # Recover the same request by query only, never submit again.
-                    return await self._status_locked(req['action_id'])
+                    return await self._status_locked(req['action_id'], view=view)
                 if req['action_id'] == self.pending['action_id']:
                     return self._deliver('act', rejection('id_conflict', req['action_id']))
                 if req['action'] != 'close_menu' or self.pending['action'] not in ('open_run_setup', 'continue_run', 'start_run', 'main_menu'):
@@ -232,7 +243,10 @@ class Executor:
                     raise ValueError('invalid_response')
                 deadline = time.monotonic() + self.wait_s
                 while result['state'] == 'RUNNING' and time.monotonic() < deadline:
-                    await asyncio.sleep(self.reader.settings.poll_interval_s)
+                    await asyncio.sleep(min(poll_delay(poll_count, self.reader.settings.poll_interval_s),
+                                            max(0, deadline - time.monotonic())))
+                    if time.monotonic() >= deadline:
+                        break
                     transport_started = time.perf_counter()
                     result = await self._query(req['action_id'])
                     transport_wait_ms += (time.perf_counter() - transport_started) * 1000
@@ -254,9 +268,9 @@ class Executor:
                 result = self._unknown(req, 'log_unavailable')
             except Exception:
                 result = self._unknown(req, 'service_error')
-            return self._deliver('act', result, restore_request=req, restore_input=continuation)
+            return self._deliver('act', result, restore_request=req, restore_input=continuation, view=view)
 
-    async def _status_locked(self, action_id, *, deliver=True):
+    async def _status_locked(self, action_id, *, deliver=True, view='full'):
         known = next((r for r in (self.input_pending, self.pending) if r and action_id == r['action_id']), None)
         input_query = known is not None and known is self.input_pending
         try:
@@ -285,11 +299,13 @@ class Executor:
         result['read_only'] = True
         if not deliver:
             return result
-        return self._deliver('action_status', result, restore_request=known, restore_input=input_query)
+        return self._deliver('action_status', result, restore_request=known, restore_input=input_query, view=view)
 
-    async def action_status(self, action_id):
+    async def action_status(self, action_id, view='full'):
+        if view not in VIEWS:
+            return self._deliver('action_status', {**rejection('invalid_request'), 'read_only': True})
         import re
         if not isinstance(action_id, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.:-]{0,79}', action_id):
             return self._deliver('action_status', {**rejection('invalid_request'), 'read_only': True})
         async with self.reader._tool_lock:
-            return await self._status_locked(action_id)
+            return await self._status_locked(action_id, view=view)

@@ -13,7 +13,7 @@ from balatro_agent.local_audit import canonical, safe_path
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = {'health', 'observe', 'wait_until_ready', 'act', 'action_status',
-         'read_notes', 'write_note', 'calculate', 'launch_game', 'close_game', 'recover_lost_session'}
+         'read_notes', 'write_note', 'run_plan', 'calculate', 'launch_game', 'close_game', 'recover_lost_session'}
 
 
 def append_call(root, run_id, payload):

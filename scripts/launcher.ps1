@@ -28,7 +28,7 @@ function Read-SharedLog([string]$Path) {
 function Read-PreparationReceipt([string]$Path, [string]$Id) {
     $value = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($value.schema -ne 'automatic-preparation-1' -or $value.preparation_id -ne $Id -or
-        $value.prepared -ne $true -or $value.stdio_tools_verified -ne 11 -or $value.game_started -ne $false) {
+        $value.prepared -ne $true -or $value.stdio_tools_verified -ne 12 -or $value.game_started -ne $false) {
         throw 'The preparation receipt does not match this launch.'
     }
     return $value
@@ -55,6 +55,7 @@ function Open-Codex {
         try {
             Start-Process -FilePath $codexLink -WindowStyle Hidden
             $detail.Text = '已请求打开项目并填入提示，确认后发送即可。'
+            $form.Close()
             return
         } catch { $script:desktopError = 'Codex 项目链接未能打开。' }
     }
@@ -160,6 +161,7 @@ $path.Add_LinkClicked({ [Windows.Forms.Clipboard]::SetText($root); $detail.Text 
 $form.Controls.Add($path)
 $tooltip = New-Object Windows.Forms.ToolTip
 $tooltip.SetToolTip($path, $root)
+$tooltip.SetToolTip($open, '打开 Codex 项目后自动关闭此窗口。')
 $logLink = New-Object Windows.Forms.LinkLabel
 $logLink.Text = '详情'; $logLink.Location = New-Object Drawing.Point(371, 366)
 $logLink.Size = New-Object Drawing.Size(35, 20); $logLink.LinkColor = $muted
@@ -180,7 +182,7 @@ $form.Controls.Add($logLink)
 function Complete-Preparation {
     $script:prepared = $true
     $status.Text = '准备就绪'; $status.ForeColor = $accent
-    $detail.Text = '在 Codex 中开始，或复制完整提示直接发送。'
+    $detail.Text = '在 Codex 中开始后自动关闭，或复制完整提示。'
     $progress.Visible = $false
     $copy.Enabled = $true; $open.Enabled = $true; $copy.Visible = $true; $open.Visible = $true
     $deckChoice.Enabled = $true; $stakeChoice.Enabled = $true

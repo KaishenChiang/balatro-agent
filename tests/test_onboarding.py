@@ -29,7 +29,7 @@ def automatic_layout(install_layout, monkeypatch):
     manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
     (root / 'pyproject.toml').write_text('[project]\nname="balatro-agent"\nversion="0.6.3"\n', encoding='utf-8')
     monkeypatch.setattr(onboarding, 'runtime_ready', lambda root: True)
-    async def tools(root): return 11
+    async def tools(root): return len(onboarding.TOOLS)
     monkeypatch.setattr(onboarding, 'list_prepared_tools', tools)
     closed_backend(monkeypatch)
     class Backend:
@@ -49,7 +49,7 @@ def prepare(layout, **options):
 def test_automatic_first_install_and_fast_reopen(automatic_layout, monkeypatch):
     root, _, _, mods, config = automatic_layout
     result = prepare(automatic_layout, preparation_id='first')
-    assert result['prepared'] and result['stdio_tools_verified'] == 11
+    assert result['prepared'] and result['stdio_tools_verified'] == len(onboarding.TOOLS)
     assert not result['client_connection_verified'] and not result['game_started']
     assert not result['reused_installation'] and result['installed_files_verified'] == 5
     before = {p: p.read_bytes() for p in [config, *mods.rglob('*')] if p.is_file()}
@@ -137,6 +137,83 @@ def test_foreign_registration_is_preserved(tmp_path):
     assert config.read_bytes() == before and not (tmp_path / '.artifacts').exists()
 
 
+def legacy_client(config, style='lf'):
+    text = config.read_text(encoding='utf-8-sig').replace(json.dumps(onboarding.TOOLS), json.dumps(onboarding.LEGACY_TOOLS))
+    text = '# preserve unrelated comments\n' + text
+    if style == 'multiline':
+        tools = '[\n # keep a comment with ] and quotes\n ' + ',\n '.join(json.dumps(tool) for tool in onboarding.LEGACY_TOOLS) + ',\n]'
+        text = text.replace(json.dumps(onboarding.LEGACY_TOOLS), tools)
+    if style in ('crlf', 'bom'):
+        text = text.replace('\n', '\r\n')
+    data = (b'\xef\xbb\xbf' if style == 'bom' else b'') + text.encode('utf-8')
+    config.write_bytes(data)
+    return data
+
+
+@pytest.mark.parametrize('style', ['lf', 'crlf', 'bom', 'multiline'])
+def test_known_eleven_tool_registration_upgrades_with_backup_and_preserves_bytes(automatic_layout, style):
+    prepare(automatic_layout)
+    root, _, _, mods, config = automatic_layout
+    before = legacy_client(config, style)
+    installed = {path: path.read_bytes() for path in mods.rglob('*') if path.is_file()}
+    with pytest.raises(onboarding.NeedsPreparation):
+        prepare(automatic_layout, reuse_only=True)
+    assert config.read_bytes() == before
+    result = prepare(automatic_layout)
+    assert result['stdio_tools_verified'] == 12 and result['reused_installation']
+    assert config.read_bytes() == onboarding.relocated_client_bytes(before, root, root)
+    assert onboarding.client_ready(root, config)
+    assert all(path.read_bytes() == data for path, data in installed.items())
+    backups = list((root / '.artifacts/backups').glob('client-path-repair-*/config-before.toml'))
+    assert len(backups) == 1 and backups[0].read_bytes() == before
+    after = config.read_bytes()
+    assert prepare(automatic_layout, reuse_only=True)['prepared'] and config.read_bytes() == after
+
+
+@pytest.mark.parametrize('damage', ['missing_tool', 'extra_tool', 'duplicate', 'unknown', 'game_running'])
+def test_tool_migration_cannot_bypass_conflicts_or_pending_game(automatic_layout, monkeypatch, damage):
+    prepare(automatic_layout)
+    root, _, _, _, config = automatic_layout
+    legacy_client(config)
+    if damage in ('missing_tool', 'extra_tool', 'duplicate'):
+        tools = list(onboarding.LEGACY_TOOLS)
+        if damage == 'missing_tool': tools.pop()
+        if damage == 'extra_tool': tools.append('unrelated_tool')
+        if damage == 'duplicate': tools[0] = tools[1]
+        config.write_text(config.read_text(encoding='utf-8').replace(json.dumps(onboarding.LEGACY_TOOLS), json.dumps(tools)), encoding='utf-8')
+    elif damage == 'unknown':
+        path = root / 'runs/live/executor/checkpoint.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('{"pending":{"state":"UNKNOWN"},"input_pending":null}', encoding='utf-8')
+    else:
+        from types import SimpleNamespace
+        monkeypatch.setattr(onboarding, 'WindowsGame', lambda path: SimpleNamespace(find=lambda: object()))
+    before = config.read_bytes()
+    with pytest.raises(ValueError):
+        prepare(automatic_layout)
+    assert config.read_bytes() == before
+    assert not list((root / '.artifacts/backups').glob('client-path-repair-*'))
+
+
+@pytest.mark.parametrize('independent', [True, False])
+def test_legacy_tools_and_project_paths_are_migrated_together(automatic_layout, independent):
+    prepare(automatic_layout)
+    previous, _, _, _, config = automatic_layout
+    before = legacy_client(config)
+    if not independent:
+        registry = InstallationRegistry(registry_path(config))
+        registry.ensure_idle(previous)
+        for area in ('executor', 'lifecycle'):
+            registry.checkpoint_path(area).unlink()
+        registry.path.unlink()  # Synthetic fixture simulates a pre-registry installation.
+    fresh_layout = downloaded_copy(automatic_layout)
+    assert prepare(fresh_layout)['prepared']
+    fresh = fresh_layout[0]
+    assert config.read_bytes() == onboarding.relocated_client_bytes(before, previous, fresh)
+    assert onboarding.client_ready(fresh, config)
+    assert prepare(fresh_layout, reuse_only=True)['stdio_tools_verified'] == 12
+
+
 def downloaded_copy(layout):
     root, steam, library, mods, config = layout
     fresh = root.parent / '新下载 folder & bang!'
@@ -166,7 +243,7 @@ def test_redownload_adopts_verified_installation_and_changes_only_client_paths(a
     result = prepare(fresh_layout, preparation_id='new-folder')
     fresh = fresh_layout[0]
     assert result['prepared'] and result['reused_installation']
-    assert result['stdio_tools_verified'] == 11 and not result['game_started']
+    assert result['stdio_tools_verified'] == len(onboarding.TOOLS) and not result['game_started']
     assert onboarding.client_ready(fresh, config)
     expected = original.decode().replace(json.dumps(str(previous / '.venv/Scripts/python.exe')), json.dumps(str(fresh / '.venv/Scripts/python.exe'), ensure_ascii=False))
     expected = expected.replace(json.dumps(str(previous)), json.dumps(str(fresh), ensure_ascii=False))
@@ -462,7 +539,7 @@ def test_automatic_bootstrap_orchestrates_one_prepare_and_reuses_early(tmp_path,
 def test_window_cannot_accept_stale_or_incomplete_ready_receipt(tmp_path, damage):
     if not PS: pytest.skip('Windows PowerShell')
     receipt = {'schema':'automatic-preparation-1','preparation_id':'this-launch',
-               'prepared':True,'stdio_tools_verified':11,'game_started':False}
+               'prepared':True,'stdio_tools_verified':len(onboarding.TOOLS),'game_started':False}
     if damage == 'id': receipt['preparation_id'] = 'old-launch'
     if damage == 'not_prepared': receipt['prepared'] = False
     if damage == 'tools': receipt['stdio_tools_verified'] = 10
@@ -501,7 +578,7 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     (scripts / 'project.py').write_text(
         'import sys,json\nfrom pathlib import Path\n'
         'root=Path(__file__).resolve().parents[1]; folder=root/".artifacts";folder.mkdir(exist_ok=True)\n'
-        'proof={"schema":"automatic-preparation-1","preparation_id":sys.argv[sys.argv.index("--preparation-id")+1],"prepared":True,"stdio_tools_verified":11,"game_started":False}\n'
+        'proof={"schema":"automatic-preparation-1","preparation_id":sys.argv[sys.argv.index("--preparation-id")+1],"prepared":True,"stdio_tools_verified":12,"game_started":False}\n'
         + ('proof["preparation_id"]="old-launch"\n' if case == 'stale_receipt' else '')
         + '(folder/"onboarding.local.json").write_text(json.dumps(proof),encoding="utf-8")\n'
         + ('sys.exit(19)\n' if case == 'failed_worker' else ''), encoding='utf-8')

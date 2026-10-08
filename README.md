@@ -1,59 +1,61 @@
 # Balatro Agent
 
-让支持工具调用的AI通过本地MCP游玩Steam《Balatro／小丑牌》。模型负责决策，程序读取玩家可见信息、执行原生动作、确认结果，并保存和复用经验。
+English | [简体中文](README.zh-CN.md)
 
-当前源码版本为 **1.0.1**，支持Windows x64／Steam／Codex。默认红色牌组、白注、原生随机单局；也可选择其他原版牌组、固定注级、最高注级或爬塔模式。
+Let a tool-capable AI play the Steam edition of **Balatro** through a local MCP server. The model makes the decisions; the program reads player-visible information, performs native actions, confirms their results, and stores reusable experience.
 
-## 下载与开始使用
+**Version 1.1.0 · Windows x64 / Steam / Codex.** The default is one unseeded run with the Red Deck at White Stake. Other original decks, all eight stakes, highest unlocked stake, and a climb mode are available.
 
-1. [下载完整项目ZIP](https://github.com/KaishenChiang/balatro-agent/archive/refs/heads/main.zip)，解压到可长期保留的目录。保留整个文件夹，EXE依赖同目录下的脚本和内置组件。准备合法安装的Steam版Balatro与已登录的Codex桌面应用，首次安装前正常关闭游戏。
-2. 双击 [Balatro Agent.exe](<Balatro Agent.exe>)，等待“准备就绪”。程序自动识别自身项目目录，查找游戏、准备内置Python和固定依赖、备份并安装Mod、配置MCP；无需预装Python或手动安装组件。再次打开会核验并复用已有安装。独立安装凭证可在重新下载、移动目录或旧登记路径失效时自动恢复连接，核验后更新路径并保留其他配置。
-3. 在窗口选择“牌组”和“注级／模式”，然后点击“在 Codex 中开始”。支持项目链接的Codex会打开对应项目的新聊天并填好选择与提示，发送后即可开始。
-4. 如果项目链接无法打开，点击“复制游玩提示”，在已加载balatro-agent MCP的Codex本地聊天中粘贴发送。提示已包含实际项目路径、当前选择和完整规则，无须先手动选择项目文件夹。
+## Download and play
 
-首次配置后，如果Codex看不到balatro-agent工具，按客户端能力重载MCP或重新打开Codex，再发送提示。AI先核验连接与当前游戏状态；“准备就绪”不等于已有聊天已经加载新服务。提示中的路径不会改变已有聊天的工作目录或文件权限。纯文字网页聊天无法直接操作本机游戏。
+1. [Download the complete project ZIP](https://github.com/KaishenChiang/balatro-agent/archive/refs/heads/main.zip) and extract it to a permanent folder. Keep the whole folder: the EXE uses its scripts and bundled components. Have a legitimate Steam installation of Balatro and a signed-in Codex desktop app. Close the game normally before installation or updates.
+2. Open **[Balatro Agent.exe](<Balatro Agent.exe>)** and wait for **准备就绪** (“Ready”). It finds its project folder and game installation, prepares the bundled Python and locked dependencies, backs up and installs the Mods, and configures MCP. No separate Python installation is needed. Later launches verify and reuse the installation. Verified receipts help recover moved or re-downloaded projects without replacing unrelated settings.
+3. Choose **牌组** (“Deck”) and **注级／模式** (“Stake / Mode”), then click **在 Codex 中开始** (“Start in Codex”). When the installed Codex supports the project link, it opens a project chat and pre-fills the selected options and prompt. The launcher closes after successfully dispatching this request. Review and **send the prompt in Codex** to begin.
+4. If the project link is unavailable, use **复制游玩提示** (“Copy play prompt”) and paste it into a local Codex chat with the `balatro-agent` MCP tools loaded. The prompt includes the real project path, selected mode, and full rules; you do not need to select the project folder first. This fallback keeps the launcher open.
 
-桌面入口统一为EXE。重复的Balatro Agent.cmd与Install.cmd已移除；需要查看安装细节、自定路径或命令行维护时，见[维护说明](docs/balatro-ai/maintenance.md)。完整包内置固定工具、Python、依赖和Mod，首次准备无需再下载这些组件；游戏本体和客户端登录由用户准备。
+The launcher interface and detailed guides currently use Chinese. If Codex cannot see the tools after setup, reload MCP using the client's available controls or reopen Codex before sending the prompt. “Ready” confirms preparation, not that an existing chat has loaded the service. A path in a prompt does not change an existing chat's working directory or file permissions. A browser-only chat cannot directly control the local game.
 
-## 牌组与注级
+Codex starts and manages MCP independently, so gameplay continues after the launcher closes. You can also close the launcher manually after copying the prompt; keep the project folder. The full download bundles the fixed tools, Python, dependencies, and Mods for offline preparation. Steam, the game, and client sign-in remain prerequisites. Advanced setup and recovery are covered in the [maintenance guide](docs/balatro-ai/maintenance.md).
 
-启动器提供15种原版牌组。选项表示用户请求，是否解锁由AI通过游戏当前档位的公开候选核验；明确未解锁时在聊天中通知并停止。名称缺失或匿名锁定槽无法核对时如实报告无法确认，不换牌组、不降注、不强制解锁。
+## Decks and stakes
 
-| 注级／模式 | 游玩方式 |
+The launcher offers all **15 original decks**. A selection requests a deck; the model checks its unlock status through the current profile's visible game menus. Locked or unconfirmed choices are reported and stopped without changing the requested deck or stake.
+
+| Stake / mode | Behavior |
 | --- | --- |
-| 白、红、绿、黑、蓝、紫、橙、金注 | 使用所选等级，只尝试一局 |
-| 最高注级 | 使用对应牌组当前已解锁的最高等级，只尝试一局 |
-| 爬塔模式 | 从对应牌组最高已解锁注级开始；正常失败重试当前等级，获胜后核验并升一级，直到金注通关或用户叫停 |
+| White, Red, Green, Black, Blue, Purple, Orange, Gold | One run at the selected stake |
+| Highest stake | One run at the highest visibly verified unlocked stake for that deck |
+| Climb mode | Start at that deck's highest unlocked stake; retry normal losses, advance one stake after a verified win, and stop after beating Gold or when asked to stop |
 
-爬塔每局先报告并复盘，再继续下一局；故障、断联和UNKNOWN保留恢复保护，不当作正常败局重开。用户请求新局时可通过原生菜单替换未完成旧局；本次目标局开始后不自行中途重开或试探存档。
+Climb mode reports and reviews each run before continuing. Connection errors and uncertain (`UNKNOWN`) actions follow recovery rules and are not treated as normal losses. A new-run request can replace an unfinished old run through native menus. Once the requested run starts, the agent does not restart it to test outcomes or saves.
 
-## 结算与心得
+## Results and local experience
 
-每局结束返回简短报告：`实际牌组／注级｜胜负｜底注／回合｜用时｜心得更新状态`。用时包含模型决策与执行等待，起点缺失时报告未确认；心得只有成功写入并读回才称已更新，没有新认识时可保持原经验并说明原因。
+Each completed run returns a brief report: **actual deck / stake · win or loss · ante / round · elapsed time · experience update status**. Time includes model decisions and execution waits. An update is reported only after writing and reading it back; no new finding can mean no update.
 
-单局结束或爬塔完成后，停留结算页面并保留游戏窗口。爬塔按授权在每局报告后进入下一局；只有用户另行明确要求才关闭游戏。
+After a single run or a completed climb, the game stays on the results screen with its window open. Closing the game requires a separate explicit request. An authorized climb continues through native menus after each report.
 
-源码提供1份[主攻略与11个简短主题](experience/README.md)，保留54份完整修订。AI开局先实际读取主攻略，相关技巧按需读取；新心得只写本机runs/local-experience/，优先于源码基线，不上传或提交。更新项目时保留该目录；换目录时先备份并单独迁移本地心得，详见[维护与恢复](docs/balatro-ai/maintenance.md#记录与经验)。笔记改变可读取的上下文，不改变模型参数。
+The source includes a [general guide and 11 short topics](experience/README.md), with all **54 revisions** preserved. New experience is written only to `runs/local-experience/` and takes precedence over the read-only baseline. It is not uploaded or committed. Back up and migrate that folder separately when moving projects. Notes affect available context, not model parameters.
 
-## 说明与验证范围
+Version 1.1.0 adds literal note search, a small model-authored run plan, lossless compact observations, and shorter early status polling. Full views remain available; native completion and hidden-information protections stay in place. Plans keep their revision history, reject uncertain continuity after reconnecting, and isolate storage faults from game results. Historical action queries do not rewind the current observation. The known 11-tool configuration from 1.0.x upgrades to 12 tools after installation, closed-game, and idle checks. See the [optimization details](docs/balatro-ai/optimization.md) for design and evidence. Smaller responses have been measured; whole-run speed and stable win rates have not been established.
 
-“在 Codex 中开始”使用官方支持的项目链接，只预填提示并等待用户发送；实际客户端项目链接仍待实测。[官方链接说明](https://learn.chatgpt.com/docs/reference/commands#chats)
+## Verification and project layout
 
-Windows／Steam／Codex有历史实机证据，最近完整实机对局使用0.6.1。当前1.0.1的源码检查、启动入口、经验存储、隔离开发MCP和离线准备范围见[验证记录](evidence/README.md)与[PROJECT](PROJECT.md)。新版完整对局、真实爬塔与各牌组解锁分支、客户端重载后的本地经验写入、其他电脑完整首用仍待验证；历史4个连续正常完成局为3胜1败，恢复局单列，不能推导稳定胜率或模型排名。
+Historical live evidence covers Windows / Steam / Codex; the latest complete live runs used **0.6.1**. Current source checks, development MCP, rebuilds, and offline preparation are recorded separately in [PROJECT](PROJECT.md) and [validation evidence](evidence/README.md). A complete 1.1.0 live run, real climb and unlock branches, actual Codex project-link behavior, and first use on another computer remain unverified. Historical results do not establish stable win rates or model rankings.
 
-已有项目聊天的详细操作规则见[bootstrap](prompts/bootstrap.md)，首次初始化目标见[首用提示](prompts/first-use.md)。[技术参考](docs/balatro-ai/reference.md)说明工具与公开信息边界，[客户端配置](docs/balatro-ai/model-client.md)保留其他客户端的接入示例，尚未实测。版本变化见[更新记录](CHANGELOG.md)。
+[Play rules](prompts/bootstrap.md) · [First-use prompt](prompts/first-use.md) · [Technical contract](docs/balatro-ai/reference.md) · [Client configuration](docs/balatro-ai/model-client.md) · [Changelog](CHANGELOG.md). These detailed documents are currently in Chinese. The redundant CMD launchers were removed; the EXE is the desktop entry.
 
-| 路径 | 内容 |
+| Path | Contents |
 | --- | --- |
-| Balatro Agent.exe、windows/、scripts/ | 桌面入口、入口源码、自动准备与维护 |
-| src/balatro_agent/、mod/ | 唯一MCP服务与游戏适配 |
-| config/、vendor/ | 固定依赖锁、原始发行包与可移植配置示例 |
-| prompts/、experience/ | 操作提示、只读经验基线及全部修订 |
-| tests/、evidence/ | 行为检查、精选历史证据和当前源码验证 |
-| third_party/、LICENSE | 第三方归属与许可 |
+| `Balatro Agent.exe`, `windows/`, `scripts/` | Desktop launcher, its source, automatic preparation and maintenance |
+| `src/balatro_agent/`, `mod/` | One MCP server and game adapter |
+| `config/`, `vendor/` | Dependency locks, original distributions and portable examples |
+| `prompts/`, `experience/` | Play instructions and immutable experience history |
+| `tests/`, `evidence/` | Behavior checks, selected historical evidence and source validation |
+| `third_party/`, `LICENSE` | Third-party notices and licenses |
 
-## 许可与源码提交
+## License and source publication
 
-自有代码、文档和经验采用[MIT](LICENSE)，第三方许可见[NOTICE](third_party/NOTICE.md)。
+Self-authored code, documentation, and experience use the [MIT License](LICENSE). Bundled third-party components retain their licenses in [NOTICE](third_party/NOTICE.md).
 
-只提交上述源码与公开材料，不上传本机.venv/、.tools/、.artifacts/、runs/、deliverables/、个人配置、存档或密钥。[.gitignore](.gitignore)已排除这些内容；源码包仍须按[交付检查](docs/balatro-ai/maintenance.md#源码交付)逐文件核验。实际公开版本以[GitHub标签](https://github.com/KaishenChiang/balatro-agent/tags)和发布收据为准。
+Public source excludes local environments, private artifacts, run records, personal configuration, saves, seeds, keys, tests containing private game code, and backups. See [.gitignore](.gitignore) and the [source delivery checks](docs/balatro-ai/maintenance.md#源码交付). Published source is identified by the [GitHub main-branch history](https://github.com/KaishenChiang/balatro-agent/commits/main/) and the commit receipt; pushing source does not create a GitHub Release.

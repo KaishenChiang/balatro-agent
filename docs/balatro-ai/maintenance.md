@@ -10,13 +10,15 @@ Windows x64用户双击根目录[Balatro Agent.exe](<../../Balatro Agent.exe>)�
 
 “在Codex中开始”通过官方项目链接传入实际目录、当前选择与目标提示，只预填并等待用户发送；复制入口附带路径、选择与完整bootstrap规则，可直接在已加载MCP的本地Codex聊天发送。未注册协议或打开失败时使用复制入口，底部仍保留项目路径供排障。提示中的路径不改变已有聊天的工作目录或文件权限，准备收据不证明客户端已经加载MCP。[官方项目链接](https://learn.chatgpt.com/docs/reference/commands#chats)
 
+项目链接打开请求成功发出后，启动器自动关闭。此时仍须用户在Codex发送提示，不表示游戏已经开始；MCP由客户端独立管理。复制提示、链接失败或安装页面降级流程保留窗口，准备未结束时仍拒绝关窗。启动器可以关闭，完整项目目录需保留。
+
 EXE是唯一桌面入口，C#源码和构建收据在windows/；重复的CMD启动和安装包装已移除。vendor包含公开的上游原始归档，先核对整包和各成员SHA-256，再通过本地Python镜像与wheel目录离线准备，不需要复制现成venv。运行依赖和构建依赖的版本、URL、哈希及许可见[运行锁](../../config/runtime.lock.json)；Mod与uv见[组件锁](../../config/dependencies.lock.json)。完整包无需联网下载组件。
 
 窗口底部“详情”显示本次日志。维护副本缺少内置归档时才使用下载或旧缓存；下载显示字节量和速度。uv下载每次连接与读操作上限20秒、至多重试一次；低于1 KB/s持续30秒或单次总计10分钟会停止。已有部分文件复制后续传，原文件保留，必须核对Range和最终完整SHA256；服务器不支持Range时保存前缀并重新下载。默认读取系统代理，显式HTTPS_PROXY优先，不修改系统网络设置。Python和Mod下载仍分别遵循uv及公开源校验；不把进度或网络成功当成安装完成。
 
 游戏未安装时在下载依赖前提示；需要安装或更新时游戏须正常关闭。已有完整的项目安装按账本与构建哈希核验，直接复用；有源码更新时只更新已记录的项目Mod文件。同名冲突、个人修改、部分安装或未决动作保留并报告，不强制覆盖。
 
-重新下载到新目录、移动目录或登记误指向父目录时，自动准备按EXE所在的项目目录恢复连接。核验本地安装账本或独立安装凭证、全部安装文件、游戏正常关闭及新旧目录无未决动作后，先备份配置和凭证，再接续原安装；需要时沿用冻结的Mod更新流程。配置只修正本项目的command／cwd；首次启用独立跟踪另加BALATRO_AGENT_REGISTRATION_FILE环境项，其他工具、模型、额外环境和个人设置保留。
+重新下载到新目录、移动目录或登记误指向父目录时，自动准备按EXE所在的项目目录恢复连接。核验本地安装账本或独立安装凭证、全部安装文件、游戏正常关闭及新旧目录无未决动作后，先备份配置和凭证，再接续原安装；需要时沿用冻结的Mod更新流程。配置修正本项目的command／cwd；已知1.0.x的11项工具清单可在相同保护下加入run_plan升级为12项，原有注释、其他工具、模型、额外环境和个人设置保留。自定义工具清单冲突仍停止。首次启用独立跟踪另加BALATRO_AGENT_REGISTRATION_FILE环境项。
 
 独立资料位于Codex配置目录的balatro-agent/：installation.local.json记录项目归属、固定路径和安装哈希；checkpoint-executor.local.json与checkpoint-lifecycle.local.json在提交前保存未决意图，完成后才清除。准备与意图写入使用同一进程间锁；已加载服务校验归属、镜像和本地记录，迁移后的旧连接或过期连接不能覆盖未决操作。旧源码目录不可用时，只有独立凭证完整、镜像无未决动作且安装文件全部匹配才自动接续；同路径重新下载可按相同条件恢复丢失的本地账本。历史凭证保留在history/。
 
@@ -76,9 +78,9 @@ $env:UV_PYTHON_INSTALL_DIR = "$PWD/.tools/python"
 ## 源码交付
 
 ```powershell
-.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.0.1.json
-.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.0.1.json --output deliverables/github-ready-1.0.1
-.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.0.1.json
+.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.1.0.json
+.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.1.0.json --output deliverables/github-ready-1.1.0
+.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.1.0.json
 ```
 
 package要求本次源码检查、开发STDIO、内置固定发行包和最小Mod构建通过，源码哈希保持不变；不以历史游戏胜利作当前版本通过条件。它生成指定的deliverables/审核目录、deliverables/source/下的完整离线源码候选ZIP和逐文件清单，移除AGENTS中的本机操作者段落。自有EXE绑定可审查源码与构建收据，vendor只允许锁定的公开原始归档；不带本机运行环境、个人配置、游戏材料、存档、种子、TEST或备份。已有候选／review目录拒绝覆盖，先保全再重新构建。
@@ -109,6 +111,8 @@ runs/live/中的动作检查点、历史UNKNOWN、生命周期记录，config中
 ## 记录与经验
 
 源码经验基线及全部版本位于experience/experience/，运行时只读；游玩修订位于runs/local-experience/experience/，优先读取并保留该主题全部历史，不上传、提交或反写源码。原目录升级保留runs/local-experience/；换项目目录时先备份并逐文件核验，再单独迁移该目录，不能用复制动作检查点来绕过UNKNOWN。已修订主题不自动混入新基线，未修订主题读取新基线；迁移不得覆盖同编号不同内容的r文件，冲突需保留双方证据并复核。首次写入中断保留部分历史，原请求可恢复；不清锁、删HEAD或删旧修订来继续。
+
+runs/live/run-plans/保存模型的短局内计划和全部修订，active.json绑定已确认新局/继续对局的公开作用域；升级时与运行记录一起保留，不作缓存清理，也不提交或上传。新局和公开档位/会话变化会使旧计划失效，文件仍保留。仅通过run_plan核对读回和同ID查询，不搬运作用域、清锁或删除记录来绕过未知动作。旧安装准备凭证只有11项工具时，新源码须重新枚举当前12项工具；源码修改并不说明客户端已经重载。
 
 历史精选记录集中于[evidence](../../evidence/README.md)，旧建设记录保留在私人归档，不作为当前任务或授权。新对局须按[bootstrap](../../prompts/bootstrap.md)先实际读取主攻略、核对条件，相关主题按需读取并保留全部反馈；终局有新认识才写入并独立读回。更新源码文件不代表客户端已重载：health缺少notes_policy="local-over-baseline-v1"或notes_write_scope="local_only"时，先重载MCP并重新核验，再提交心得。开发STDIO使用隔离目录和阻断游戏的传输，不读取正式基线或本地经验。
 

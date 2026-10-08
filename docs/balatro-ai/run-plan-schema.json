@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "PlanContent": {
+      "additionalProperties": false,
+      "properties": {
+        "objective": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Objective",
+          "type": "string"
+        },
+        "priorities": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Priorities",
+          "type": "array"
+        },
+        "recheck_when": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Recheck When",
+          "type": "array"
+        },
+        "experience_refs": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Experience Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "objective",
+        "priorities",
+        "recheck_when",
+        "experience_refs"
+      ],
+      "title": "PlanContent",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "observation_id": {
+      "pattern": "^obs-[0-9a-f]{16}-[0-9]+$",
+      "title": "Observation Id",
+      "type": "string"
+    },
+    "content": {
+      "$ref": "#/$defs/PlanContent"
+    },
+    "expected_revision": {
+      "maximum": 50,
+      "minimum": 0,
+      "title": "Expected Revision",
+      "type": "integer"
+    },
+    "write_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$",
+      "title": "Write Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "observation_id",
+    "content",
+    "expected_revision",
+    "write_id"
+  ],
+  "title": "PlanWrite",
+  "type": "object"
+}

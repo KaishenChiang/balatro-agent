@@ -1,8 +1,10 @@
 # 技术参考
 
-当前公开契约为reader-2／player-visible-1、executor-1、notes-1／calculate-1；适配版本与直接操作能力以实际health反馈为准。代码版本及实机覆盖以[PROJECT](../../PROJECT.md)为准，协议兼容不等于所有稀有分支都实测通过。
+当前公开契约为reader-2／player-visible-1、executor-1、notes-1／calculate-1、run-plan-v1；观察展示可用columns-v1。适配版本与直接操作能力以实际health反馈为准。代码版本及实机覆盖以[PROJECT](../../PROJECT.md)为准，协议兼容不等于所有稀有分支都实测通过。
 
 结构定义见 [观察Schema](observation-schema.json)、[动作Schema](action-schema.json)、[笔记Schema](notes-schema.json)、[计算Schema](calculation-schema.json)。Schema由scripts/export_contract.py从当前代码导出；行为组合以下文及双端校验为准。
+
+observe、wait_until_ready、act、action_status的MCP参数view默认compact，full返回传统结构。compact只在较长同字段对象数组按列编码后更小时采用，反馈标记observation_encoding="columns-v1"。{$columns:[字段],$rows:[[值]]}按列一一对应原对象，可无损还原后按观察Schema解释；行号不是position，异字段对象不补null或合并。白名单过滤、背面/石头牌遮蔽、未知值与observation_id在展示压缩前确定。展示视图不参与动作去重身份，非法view在游戏读取/提交前拒绝；交付日志保留实际格式，内部确认继续使用完整白名单对象。
 
 ## 观察与可见性
 
@@ -106,9 +108,13 @@ RETIRED只代表封存成功，original_action_state=UNKNOWN、normal_game_compl
 
 ## 经验与公开计算
 
-read_notes(kind="experience", note_ids=null, revision=null, view="full")实际读盘；开局指定note_ids=["EXP-GENERAL-GUIDE"]，其他主题按当前条件读取。主攻略不存在时才省略note_ids读取可用正式经验；省略仍兼容读取全部，[]返回空。指定历史revision时只传一个编号；未知编号not_found。health与定义支持content视图时可省去重复Markdown，保留相同完整字段与修订元数据，不改变文件。新聊天或压缩后引用不清时重读，笔记只改变可读取上下文，不改变模型参数。
+read_notes(kind="experience", note_ids=null, revision=null, view="content", query=null, offset=0)实际读盘；开局指定note_ids=["EXP-GENERAL-GUIDE"]，其他主题按当前条件读取。主攻略不存在时才省略note_ids读取可用正式经验；省略仍兼容读取全部，[]返回空。指定历史revision时只传一个编号；未知编号not_found。MCP默认content保留完整字段与修订元数据，full额外返回重复Markdown，磁盘格式不变。新聊天或压缩后引用不清时重读，笔记只改变可读取上下文，不改变模型参数。
+
+view="index"只返回note_id、revision/current_revision、note_ref、confidence与最多120字符的事实/条件/反例预览，明确discovery_only/preview_only。query为最多80字符的不区分大小写字面子串，匹配编号与已校验正文，不排序推荐动作或生成摘要；offset与next_offset按20条分页，索引可扫描最多200个主题。索引不算完整经验读取，先content/full读选中版本再作依据。query和非零offset仅index允许；索引仍每次读盘、校验完整修订，不走过期缓存。
 
 write_note(note_id, content, expected_revision, write_id, kind="experience")创建expected_revision=0，更新必须匹配当前修订。EXP-／TEST-编号与分区匹配，仅大写字母、数字、连字符。content含sources(run_id、steps)、facts、interpretation、conditions、counterexamples、confidence(low／medium／high)、revision_reason。模型撰写策略解释，程序校验结构；来源真实性须对照实际交付。
+
+write_note的MCP返回也默认view="content"，可用full取Markdown；展示视图不进入写入去重身份，不改变持久化及读回要求。
 
 正式基线目录experience/experience/只读；个人修订目录runs/local-experience/experience/优先读取，TEST独立且不继承基线。首次修订将该主题全部已验证基线历史复制到本地，再追加新版本并提交本地HEAD；部分复制失败保留文件，无本地HEAD时仍读基线，同请求可恢复，已有修订不得覆盖。源码升级后已修订主题只读自己的完整历史，不自动拼接新基线；未修订主题跟随基线。本地经验不上传、提交或反写源码。
 
@@ -119,6 +125,12 @@ r0001.md等为不可变完整版本，HEAD.json是原子提交指针。先fsync�
 calculate只处理显式输入：sum／difference／product／quotient／mean／median／variance_population用values，difference／quotient仅两数；combination用n、k；hypergeometric用population、successes、draws、min_successes、max_successes。返回规范输入、公式、结果与假设，不读取游戏、种子、存档或网络。
 
 最多200个有限数、绝对值≤10^12，组合／概率总体≤1000，结果绝对值≤10^100；拒绝未知、null、bool、NaN／Infinity、除零及额外字段。概率前提由模型依据公开信息确认；没有推荐动作、未来模拟或任意代码功能。
+
+## 局内计划
+
+run_plan(mode="read")实际读取当前局计划；mode="write"需最新实际交付observation_id、content、expected_revision和write_id，Schema见[计划写入](run-plan-schema.json)。content含objective、priorities、recheck_when、experience_refs，正文最多2000 UTF-8字节；每项最多200字符，优先事项与复查条件各1–4项，引用最多6个EXP-XXX@rN，须先成功content/full读取对应版本。首次修订0，本局最多50次修订；同ID同内容查询已提交版本，不同内容拒绝，当前修订冲突拒绝。新聊天/压缩后恢复计划并重读引用不清的经验。MCP进程重启须先以未改变的公开观察确认连续性，无法确认时不复用旧计划。
+
+只对已确认start_run/continue_run的当前原生局建立公开作用域；写入绑定最近实际交付且ready的hand/shop/pack/blind_select观察，终局、未决动作或检查点故障拒绝新修订。新局、进入开局设置/主菜单、档位/会话变化或公开轮次回退使旧计划失效，保留旧文件与所有修订。计划位于runs/live/run-plans/，不上传、不作为动作授权或真实事实证据；程序不生成正文或策略，不自动执行计划。计划故障单独返回，不改变原生动作完成状态，详情见[优化说明](optimization.md)。
 
 ## 证据与评测
 

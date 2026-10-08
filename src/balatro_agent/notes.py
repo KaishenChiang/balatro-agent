@@ -231,15 +231,20 @@ class NotesStore:
         return {key: row[key] for key in ('note_id', 'kind', 'revision', 'created_utc', 'write_id', 'content')} | {
             'current_revision': current, 'markdown': render(row), 'source_validation': 'model_supplied_audit_required'}
 
-    def read(self, kind='experience', note_ids=None, revision=None, view='full'):
-        if kind not in ('experience', 'TEST') or view not in ('full', 'content'):
+    def read(self, kind='experience', note_ids=None, revision=None, view='full', query=None, offset=0):
+        if kind not in ('experience', 'TEST') or view not in ('full', 'content', 'index'):
+            raise NoteError('invalid_input')
+        if (type(offset) is not int or not 0 <= offset <= LIMIT_NOTES
+                or (view != 'index' and (query is not None or offset != 0))
+                or (query is not None and (not isinstance(query, str) or len(query) > 80
+                    or any(ord(c) < 32 for c in query)))):
             raise NoteError('invalid_input')
         if note_ids is not None and (not isinstance(note_ids, list) or len(note_ids) > 20 or any(not isinstance(n, str) for n in note_ids) or len(set(note_ids)) != len(note_ids)):
             raise NoteError('invalid_input')
         if revision is not None and (type(revision) is not int or not 1 <= revision <= LIMIT_REVISIONS or note_ids is None or len(note_ids) != 1):
             raise NoteError('invalid_input')
         ids = self._ids(kind) if note_ids is None else note_ids
-        if len(ids) > 20:
+        if len(ids) > 20 and view != 'index':
             raise NoteError('resource_limit')
         notes = []
         for note_id in ids:
@@ -251,11 +256,30 @@ class NotesStore:
             selected = revision if revision is not None else current
             if selected > current:
                 raise NoteError('not_found')
-            notes.append(self._public(self._revision(kind, note_id, selected), current))
+            row = self._revision(kind, note_id, selected)
+            if view == 'index':
+                # Literal retrieval only: no model, relevance score or strategy.
+                content = row['content']
+                text = canonical({'note_id': note_id, 'content': content}).casefold()
+                if query and query.strip().casefold() not in text:
+                    continue
+                previews = content['conditions'][:2]
+                notes.append({'note_id': note_id, 'revision': selected, 'current_revision': current,
+                              'note_ref': f'{note_id}@r{selected}', 'confidence': content['confidence'],
+                              'fact_preview': content['facts'][0][:120],
+                              'condition_previews': [s[:120] for s in previews],
+                              'counterexample_preview': content['counterexamples'][0][:120],
+                              'preview_only': True})
+            else:
+                notes.append(self._public(row, current))
         if view == 'content':
             for note in notes:
                 del note['markdown']
         result = {'status': 'ok', 'schema_version': 'notes-1', 'read_only': True, 'kind': kind, 'notes': notes}
+        if view == 'index':
+            total = len(notes)
+            result.update(notes=notes[offset:offset + 20], total_matches=total, discovery_only=True,
+                          next_offset=offset + 20 if offset + 20 < total else None)
         if len(canonical(result).encode('utf-8')) > LIMIT_RESPONSE_BYTES:
             raise NoteError('resource_limit')
         return result
@@ -342,27 +366,35 @@ class NotesService:
     def __init__(self, settings):
         self.store = NotesStore(settings.notes_dir, baseline_root=settings.baseline_notes_dir)
         self.audit = LocalAudit(settings)
+        self.read_refs = set()
 
     @staticmethod
     def _failure(exc, write=False):
         code = str(exc) if isinstance(exc, NoteError) else 'unsafe_path' if isinstance(exc, ValueError) and str(exc) == 'unsafe_path' else 'storage_unavailable'
         return error(code if code in ERRORS else 'storage_unavailable', write=write)
 
-    def read_notes(self, kind='experience', note_ids=None, revision=None, view='full'):
+    def read_notes(self, kind='experience', note_ids=None, revision=None, view='full', query=None, offset=0):
         try:
-            result = self.store.read(kind, note_ids, revision, view)
+            result = self.store.read(kind, note_ids, revision, view, query, offset)
         except (NoteError, OSError, ValueError, TypeError) as exc:
             result = self._failure(exc)
-        return self.audit.deliver('read_notes', result)
+        delivered = self.audit.deliver('read_notes', result)
+        if delivered.get('status') == 'ok' and kind == 'experience' and view != 'index':
+            self.read_refs.update(f"{note['note_id']}@r{note['revision']}" for note in delivered['notes'])
+        return delivered
 
-    def write_note(self, note_id, content, expected_revision, write_id, kind='experience'):
+    def write_note(self, note_id, content, expected_revision, write_id, kind='experience', view='full'):
         try:
+            if view not in ('content', 'full'):
+                raise NoteError('invalid_input')
             request = self.store.request(kind, note_id, content, expected_revision, write_id)
             try:
                 self.audit.record('write_note', 'intent', request)
             except (OSError, ValueError):
                 raise NoteError('log_unavailable') from None
             result = self.store.write(request)
+            if view == 'content':
+                result['note'] = {key: value for key, value in result['note'].items() if key != 'markdown'}
         except (NoteError, OSError, ValueError, TypeError) as exc:
             result = self._failure(exc, write=True)
         return self.audit.deliver('write_note', result, write=True)

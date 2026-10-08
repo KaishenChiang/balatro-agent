@@ -225,15 +225,15 @@ async def test_malformed_hidden_identity_cannot_cause_error_side_channel(setting
     assert before==after and after['status']=='ok'
 
 
-async def test_mcp_tools_only_controlled_eleven(settings,public_envelope,monkeypatch):
+async def test_mcp_tools_only_controlled_twelve(settings,public_envelope,monkeypatch):
     import balatro_agent.server as server
     monkeypatch.setattr(server,'reader',Reader(settings,client_for(settings,lambda req:reply(req,public_envelope))))
     async with Client(server.mcp) as client:
         tools=await client.list_tools()
-        assert {tool.name for tool in tools.tools}=={'health','observe','wait_until_ready','act','action_status','read_notes','write_note','calculate','launch_game','close_game','recover_lost_session'}
+        assert {tool.name for tool in tools.tools}=={'health','observe','wait_until_ready','act','action_status','read_notes','write_note','run_plan','calculate','launch_game','close_game','recover_lost_session'}
         by_name={tool.name:tool for tool in tools.tools}
         assert set(by_name['launch_game'].input_schema['properties'])=={'operation_id','timeout_s'}
         assert set(by_name['close_game'].input_schema['properties'])=={'operation_id','observation_id','timeout_s'}
-        assert all(tool.annotations.read_only_hint == (tool.name not in ('act','write_note','launch_game','close_game','recover_lost_session')) for tool in tools.tools)
+        assert all(tool.annotations.read_only_hint == (tool.name not in ('act','write_note','run_plan','launch_game','close_game','recover_lost_session')) for tool in tools.tools)
         result=await client.call_tool('observe',{})
         assert result.structured_content['status']=='ok'

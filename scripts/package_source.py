@@ -11,14 +11,14 @@ import struct
 from bootstrap_sources import no_links, digest, unpack
 
 ROOT=Path(__file__).resolve().parents[1]
-TOP=['LICENSE','README.md','PROJECT.md','CHANGELOG.md','Balatro Agent.exe','pyproject.toml','uv.lock',
+TOP=['LICENSE','README.md','README.zh-CN.md','PROJECT.md','CHANGELOG.md','Balatro Agent.exe','pyproject.toml','uv.lock',
      '.gitattributes','.gitignore','.python-version','AGENTS.md']
 SCRIPTS=['setup.ps1','launcher.ps1','codex_handoff.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
          'install_portable.py','update_mod.py','package_source.py','verify_source_candidate.py','verify_offline.py',
          'stdio_smoke.py','export_contract.py','check_notes_persistence.py',
          'audit_experience_mcp_evidence.py','client_evidence.py','project.py','analyze_timings.py']
-DOCS=['reference.md','maintenance.md','model-client.md',
-      'observation-schema.json','action-schema.json','notes-schema.json','calculation-schema.json']
+DOCS=['reference.md','maintenance.md','model-client.md','optimization.md',
+      'observation-schema.json','action-schema.json','notes-schema.json','calculation-schema.json','run-plan-schema.json']
 
 
 def verified_bundles(root=ROOT):
@@ -282,7 +282,8 @@ def main(argv=None):
             if hashlib.sha256(bundle.read(item['path'])).hexdigest()!=item['sha256']:
                 raise ValueError('Historical evidence hash changed')
     validation={'evidence_type':'current_source_checks_not_live_game_acceptance','version':version,
-        'synthetic':report['synthetic'],'development_stdio_exit_code':0,'development_tools':11,
+        'synthetic':report['synthetic'],'development_stdio_exit_code':0,
+        'development_tools':len(json.loads((ROOT/report['development_stdio_report']).read_text(encoding='utf-8'))['tools']),
         'fixed_downloads_verified':True,'minimal_mod_build_verified':True,
         'bundled_distributions_verified':True,
         'current_version_real_game_verified':False,'historical_live_evidence':'history.json',

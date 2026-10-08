@@ -9,16 +9,19 @@ from pathlib import Path
 from balatro_agent.local_audit import canonical, safe_path
 from balatro_agent.actions import ActionRequest
 from balatro_agent.recovery import RetirementResponse
+from balatro_agent.run_plan import PlanWrite
 
 ROOT=Path(__file__).resolve().parents[1]
 LIFECYCLE={'launch_game','close_game'}
-TOOLS={'health','observe','wait_until_ready','act','action_status','read_notes','write_note','calculate','recover_lost_session'}|LIFECYCLE
+TOOLS={'health','observe','wait_until_ready','act','action_status','read_notes','write_note','run_plan','calculate','recover_lost_session'}|LIFECYCLE
 HEALTH_WRAPPER_METADATA = {
     'unlock_input_protocol': 'native-overlay-v1',
     'session_recovery_protocol': 'lost-session-v1',
     'primary_experience_note': 'EXP-GENERAL-GUIDE',
     'notes_policy': 'local-over-baseline-v1',
     'notes_write_scope': 'local_only',
+    'notes_default_view': 'content',
+    'run_plan_protocol': 'run-plan-v1',
 }
 
 
@@ -101,7 +104,7 @@ def main():
                  for line,row in attempts if host_error(row)]
     wanted=[(line,row) for line,row in attempts if not host_error(row)]
     assert wanted
-    deliveries=defaultdict(list);intents=defaultdict(list);note_intents=defaultdict(list);lifecycle_intents=defaultdict(list)
+    deliveries=defaultdict(list);intents=defaultdict(list);note_intents=defaultdict(list);plan_intents=defaultdict(list);lifecycle_intents=defaultdict(list)
     paths=list((ROOT/'runs/live').glob('reader-*.jsonl'))+list((ROOT/'runs/live/executor').glob('actions-*.jsonl'))+list((ROOT/'runs/live/local').glob('local-*.jsonl'))
     for path in sorted(paths):
         for line,row in read(path):
@@ -109,6 +112,7 @@ def main():
             ref={'file':str(path.relative_to(ROOT)),'line':line,'utc':row.get('utc',row.get('delivered_utc'))}
             kind=row.get('kind');tool=row.get('tool')
             if kind=='intent' and tool=='write_note': note_intents[canonical(row['value'])].append(ref)
+            elif kind=='intent' and tool=='run_plan': plan_intents[canonical(row['value'])].append(ref)
             elif kind in ('intent','existing_window_intent') and tool in LIFECYCLE:
                 lifecycle_intents[(tool,row['value']['operation_id'])].append(ref)
             elif kind=='intent': intents[canonical(row['value']['request'])].append(ref)
@@ -136,6 +140,8 @@ def main():
         if tool in ('act','write_note'):
             request=json.loads(canonical(row['parameters']))
             if tool=='act':
+                if request.get('view') in ('compact', 'full'):
+                    request.pop('view')
                 try:
                     normalized=ActionRequest.model_validate(request).model_dump()
                 except (ValueError, TypeError):
@@ -145,10 +151,23 @@ def main():
                 if canonical(normalized)!=canonical(row['parameters']):
                     item['request_normalization']='ActionRequest'
                 request=normalized
-            if tool=='write_note': request.setdefault('kind','experience')
+            if tool=='write_note':
+                request.setdefault('kind','experience')
+                if request.get('view') in ('content', 'full'):
+                    request.pop('view')
             candidates=(intents if tool=='act' else note_intents)[canonical(request)]
             required=row['result'].get('submitted') is not False if tool=='act' else row['result'].get('write_state')=='COMMITTED'
             if candidates: item['intent']=candidates.pop(0)
+            elif required: missing_intents.append({'line':line,'tool':tool})
+        elif tool=='run_plan' and row['parameters'].get('mode')=='write':
+            request={key:value for key,value in row['parameters'].items() if key!='mode'}
+            try:
+                request=PlanWrite.model_validate(request).model_dump()
+            except (ValueError,TypeError):
+                pass
+            candidates=plan_intents[canonical(request)]
+            required=row['result'].get('write_state')=='COMMITTED' and not row['result'].get('duplicate')
+            if required and candidates: item['intent']=candidates.pop(0)
             elif required: missing_intents.append({'line':line,'tool':tool})
         elif tool in LIFECYCLE:
             result=row['result'];operation_id=row['parameters'].get('operation_id')

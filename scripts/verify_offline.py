@@ -78,7 +78,8 @@ def main():
             'runtime_sync_offline_flag':True,
             'copied_existing_environment':False,'locked_versions_match':versions_match,
             'source_hashes_unchanged':unchanged,'fresh_mod_build_matches':build_match,
-            'development_tools':11 if success else None,'passed':success,'commands':results,
+            'development_tools':len(json.loads((target/'runs/checks/offline-stdio.json').read_text(encoding='utf-8'))['tools']) if success else None,
+            'passed':success,'commands':results,
             'real_game_or_client_config_changed':False,'real_game_verified':False,
             'full_new_machine_installation_verified':False}
     output.parent.mkdir(parents=True,exist_ok=True)

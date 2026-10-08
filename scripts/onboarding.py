@@ -22,6 +22,16 @@ class NeedsPreparation(Exception):
     pass
 
 
+LEGACY_TOOLS = [tool for tool in TOOLS if tool != 'run_plan']
+
+
+def tools_match(tools, *, allow_legacy=False):
+    if not isinstance(tools, list) or any(not isinstance(tool, str) for tool in tools):
+        return False
+    choices = (TOOLS, LEGACY_TOOLS) if allow_legacy else (TOOLS,)
+    return any(len(tools) == len(choice) and set(tools) == set(choice) for choice in choices)
+
+
 def client_entry(root):
     return {'command': str(root / '.venv/Scripts/python.exe'),
             'args': ['-m', 'balatro_agent.server'], 'cwd': str(root),
@@ -30,7 +40,7 @@ def client_entry(root):
             'env': {'BALATRO_AGENT_CLIENT_CONTEXT': 'codex_config'}}
 
 
-def client_ready(root, config):
+def client_ready(root, config, *, allow_legacy=False):
     no_links(config)
     parsed = tomllib.loads(config.read_text(encoding='utf-8-sig')) if config.exists() else {}
     entry = parsed.get('mcp_servers', {}).get('balatro-agent')
@@ -40,10 +50,10 @@ def client_ready(root, config):
     paths_match = all(isinstance(entry.get(key), str) and Path(entry[key]) == Path(expected[key])
                       for key in ('command', 'cwd'))
     tools = entry.get('enabled_tools', TOOLS)
-    tools_match = isinstance(tools, list) and len(tools) == len(TOOLS) and set(tools) == set(TOOLS)
+    matches_tools = tools_match(tools, allow_legacy=allow_legacy)
     environment = entry.get('env', {})
     if not (paths_match and entry.get('args') == expected['args']
-            and entry.get('enabled', True) is True and tools_match
+            and entry.get('enabled', True) is True and matches_tools
             and isinstance(environment, dict) and environment.get('BALATRO_AGENT_CLIENT_CONTEXT') == 'codex_config'):
         raise ValueError('Existing balatro-agent config differs; preserve it and inspect the client configuration')
     return True
@@ -63,7 +73,7 @@ def client_identity(config):
             or not isinstance(cwd, str) or not Path(cwd).is_absolute()
             or entry.get('args') != ['-m', 'balatro_agent.server']
             or entry.get('enabled', True) is not True
-            or not isinstance(tools, list) or len(tools) != len(TOOLS) or set(tools) != set(TOOLS)
+            or not tools_match(tools, allow_legacy=True)
             or not isinstance(env, dict) or env.get('BALATRO_AGENT_CLIENT_CONTEXT') != 'codex_config'
             or env.get(ENVIRONMENT_KEY) is not None and (not isinstance(env[ENVIRONMENT_KEY], str) or Path(env[ENVIRONMENT_KEY]) != registry_path(config))):
         raise ValueError('Existing balatro-agent config differs; preserve it and inspect the client configuration')
@@ -179,7 +189,7 @@ def ensure_client(root, config):
 
 
 def relocated_client_bytes(before, previous, root):
-    """Change only the two registered project paths, preserving other TOML bytes."""
+    """Repair project paths and a known legacy tool list, preserving other bytes."""
     text = before.decode('utf-8-sig')
     parsed = tomllib.loads(text)
     expected = tomllib.loads(text)
@@ -200,6 +210,16 @@ def relocated_client_bytes(before, previous, root):
             raise ValueError('Existing client paths cannot safely be updated; preserve the configuration')
         match = matches[0]
         block = block[:match.start(2)] + json.dumps(value, ensure_ascii=False) + block[match.end(2):]
+    tools = parsed['mcp_servers']['balatro-agent'].get('enabled_tools', TOOLS)
+    if not tools_match(tools, allow_legacy=True):
+        raise ValueError('Existing client tools differ; preserve the configuration')
+    if not tools_match(tools):
+        matches = list(re.finditer(r'(?m)^[ \t]*enabled_tools[ \t]*=[ \t]*\[', block))
+        if len(matches) != 1:
+            raise ValueError('Existing client tools cannot safely be updated; preserve the configuration')
+        position = matches[0].end()
+        block = block[:position] + '"run_plan", ' + block[position:]
+        expected['mcp_servers']['balatro-agent']['enabled_tools'] = ['run_plan', *tools]
     result = text[:start] + block + text[end:]
     if tomllib.loads(result) != expected or Path(parsed['mcp_servers']['balatro-agent']['cwd']) != previous:
         raise ValueError('Unrelated client configuration changed')
@@ -267,7 +287,7 @@ def adopt_registered_installation(root, steam, library, mods, config, registry=N
         if previous_ledger.exists() and recorded_installation(previous, steam, library, mods) != entries:
             raise ValueError('Previous installation record differs from its independent receipt; preserve it')
     else:
-        if not client_ready(previous, config):
+        if not client_ready(previous, config, allow_legacy=True):
             raise ValueError('Previous project registration could not be verified')
         project_path = previous / 'pyproject.toml'
         no_links(project_path)
