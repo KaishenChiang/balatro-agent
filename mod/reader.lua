@@ -267,10 +267,11 @@ local function ui_actions(roots, targets, ready, bindings)
       seen_nodes[node] = true
       local c = node.config or {}
       local name = func_map[c.func] or action_map[c.button]
-      -- A resumed, already won run has no victory overlay. Its visible Options
-      -- button is the native entrance to New Run; the executor opens both menus
+      -- A running game exposes New Run through its visible Options button.
+      -- The executor opens both menus
       -- as one navigation action, checking each live button before clicking.
-      local won_options=c.button=='options' and G.STAGE==G.STAGES.RUN and G.GAME and G.GAME.won
+      local run_options=c.button=='options' and G.STAGE==G.STAGES.RUN and G.GAME
+        and not G.OVERLAY_MENU and not G.deck_preview
       -- Steamodded 26.829.0 replaces New Run with a paged selector. Its live
       -- callback differentiates navigation from Play; never invoke the callback.
       if c.button == 'run_select_change_page' then
@@ -308,7 +309,7 @@ local function ui_actions(roots, targets, ready, bindings)
                     region=target and target.region, position=target and target.position,
                     label=visible_text(node, true)}
       if bindings then bindings[#bindings+1] = {node=node, action=out[#out]} end
-      if won_options then
+      if run_options then
         out[#out+1]={name='open_run_setup',enabled=ready and clickable(node),label=visible_text(node,true)}
         if bindings then bindings[#bindings+1]={node=node,action=out[#out]} end
       end

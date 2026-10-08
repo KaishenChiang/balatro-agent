@@ -18,6 +18,7 @@ class Settings:
     baseline_notes_dir: Path | None = ROOT / "experience"
     lifecycle_file: Path = ROOT / "config/game-lifecycle.local.json"
     client_context: str = "unspecified"
+    registration_file: Path | None = None
 
     @classmethod
     def runtime(cls):
@@ -25,6 +26,7 @@ class Settings:
         if os.environ.get("BALATRO_AGENT_CLIENT_CONTEXT") == "development":
             return cls(log_dir=ROOT / "runs/checks/stdio-development", notes_dir=ROOT / "runs/checks/stdio-development/experience", baseline_notes_dir=None, client_context="development")
         return cls(notes_dir=ROOT / "runs/local-experience", baseline_notes_dir=ROOT / "experience",
+                   registration_file=Path(os.environ['BALATRO_AGENT_REGISTRATION_FILE']) if os.environ.get('BALATRO_AGENT_REGISTRATION_FILE') else None,
                    client_context="codex_config" if os.environ.get("BALATRO_AGENT_CLIENT_CONTEXT") == "codex_config" else "unspecified")
 
     def confirmed_profile(self) -> int | None:

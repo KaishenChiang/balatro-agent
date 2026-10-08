@@ -57,19 +57,19 @@ act(action, parameters, observation_id, action_id, reason, experience_refs)提�
 | use／buy_and_use | region、position；native-target-v1允许直接选中并使用，手牌目标仍由模型另行select |
 | select_pack_card | region=pack、position；取普通／增强扑克牌或Joker；消费品须有当前明确显示且启用的取牌按钮 |
 | reroll／cash_out／next_round／skip_pack | {}；当前真实按钮与相关效果 |
-| open_run_setup／next_setup_page／previous_setup_page | {}；当前原生开局导航，不覆盖未完成局 |
+| open_run_setup／next_setup_page／previous_setup_page | {}；当前原生开局导航；新局请求允许替换未完成旧局 |
 | select_setup_option | kind=deck或stake、position；当前已显示且正常解锁的原版候选 |
 | next_setup_choices／previous_setup_choices | {}；当前牌组／注级候选列表分页，区别于设置阶段切页 |
-| start_run／continue_run | {}；原生随机非挑战开局或继续，禁止覆盖未完成／未知旧局 |
+| start_run／continue_run | {}；原生随机非挑战开局或继续，新局可原生替换旧局，未决动作与UNKNOWN仍阻断提交 |
 | open_options／open_settings／next_game_speed／previous_game_speed | {}；正常选项／设置及原生0.5／1／2／4速度循环 |
 | run_info／deck_info／close_menu | {}；当前正常菜单；自然解锁提示按单张close_menu处理 |
 | main_menu／continue_endless | {}；原生终局导航；当前基线不执行无尽，另须授权 |
 
 商店包打开和优惠券兑换按can_open／can_redeem映射buy，保留原生门槛。包内塔罗／星球／幻灵即用应提交use，手牌目标单独select；取牌和使用不能互换，程序不自动改成另一个语义。0.6.1在选中前拒绝只有使用按钮的消费品取牌请求；未知直接协议时按实际定义先选择公开目标。
 
-Continue页已渲染且next_setup_page启用的“新的一局”可原生切页。旧局已由原生加载且won严格为true时才允许新开；未完成、缺字段、其他truthy值及菜单占位状态均拒绝，不解码或删存档绕过。用户可明确指定原版牌组与固定注级、最高已解锁注级或爬塔；先核验所选牌组，再核对其当前公开注级候选，锁定或无法确认时停止，不强制解锁。
+Continue页已渲染且next_setup_page启用的“新的一局”可原生切页。新局按钮已显示且启用时可按用户新局请求原生替换旧局；不再读取旧局won标志作为前提，不解码或删存档。观察、原生档位、设置解锁、随机非挑战和未决动作检查仍适用。用户可明确指定原版牌组与固定注级、最高已解锁注级或爬塔；先核验所选牌组，再核对其当前公开注级候选，锁定或无法确认时停止，不强制解锁。
 
-固定注级与最高已解锁注级只尝试一局。明确爬塔授权后，从该牌组最高已解锁注级开始，正常失败先报告再重试当前注级；获胜后重新核验原生解锁，按白／红／绿／黑／蓝／紫／橙／金紧接升一级，直至金注通关或用户叫停。每局保留失败与经验收据；故障和UNKNOWN不能计作正常败局或触发自动重试。必要新局导航仍使用当前观察下的原生动作，不覆盖未完成局。
+固定注级与最高已解锁注级只尝试一局。明确爬塔授权后，从该牌组最高已解锁注级开始，正常失败先报告再重试当前注级；获胜后重新核验原生解锁，按白／红／绿／黑／蓝／紫／橙／金紧接升一级，直至金注通关或用户叫停。每局保留失败与经验收据；故障和UNKNOWN不能计作正常败局或触发自动重试。必要新局导航仍使用当前观察下的原生动作，本次目标局开始后不自行中途重开。
 
 observe／wait_until_ready成功返回的server_time={utc,unix_s}是服务端墙钟元数据，不属于游戏观察或observation_id。单局时长采用开局提交前的observe至终局确认后observe的时间差，包括客户端决策与执行等待，不代表纯推理时间。缺起点、旧服务无时钟或时钟倒退时用时未确认。每局简短报告实际牌组、注级、胜负、底注／回合、时长与心得是否更新；“已更新”须有本局成功写入且read_notes读回确认，无新增可报告未更新。
 

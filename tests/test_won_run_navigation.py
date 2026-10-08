@@ -1,4 +1,4 @@
-"""Native menu navigation for a resumed win; no live game acceptance."""
+"""Native menu navigation for old runs; no live game acceptance."""
 import pytest
 
 from test_executor import ROOT, game, native_start_wrappers, request
@@ -29,9 +29,10 @@ def won_options_scene(game, won=True):
     ''')
 
 
-def test_resumed_win_uses_both_native_clicks_and_waits_for_display(game):
+@pytest.mark.parametrize('won', [True, False])
+def test_old_run_uses_both_native_clicks_and_waits_for_display(game, won):
     lua, call, _ = game
-    won_options_scene(game)
+    won_options_scene(game, won=won)
     before=call('reader_snapshot')['public']
     assert any(a['name']=='open_run_setup' and a['enabled'] for a in before['ui_actions'])
     parent=call('act_submit', request(game, 'open_run_setup', {}, 'resumed-win-setup'))
@@ -48,19 +49,11 @@ def test_resumed_win_uses_both_native_clicks_and_waits_for_display(game):
     assert call('action_status', {'action_id':'resumed-win-setup'})['state']=='COMPLETED'
 
 
-def test_unfinished_run_has_no_setup_shortcut_and_rejects_it(game):
-    lua, call, _ = game
-    won_options_scene(game, won=False)
-    assert not any(a['name']=='open_run_setup' for a in call('reader_snapshot')['public']['ui_actions'])
-    result=call('act_submit', request(game, 'open_run_setup', {}, 'unfinished-setup'))
-    assert result['state']=='REJECTED' and result['submitted'] is False
-    assert lua.eval('G.OVERLAY_MENU') is None
-
-
 @pytest.mark.parametrize('gate', ['disabled', 'foreign_overlay', 'profile_changed'])
-def test_setup_second_click_cannot_cross_native_gates(game, gate):
+@pytest.mark.parametrize('won', [True, False])
+def test_setup_second_click_cannot_cross_native_gates(game, gate, won):
     lua, call, _ = game
-    won_options_scene(game)
+    won_options_scene(game, won=won)
     result=call('act_submit', request(game, 'open_run_setup', {}, 'gated-setup'))
     assert result['state']=='RUNNING'
     if gate=='disabled':
@@ -74,8 +67,8 @@ def test_setup_second_click_cannot_cross_native_gates(game, gate):
     assert call('action_status', {'action_id':'gated-setup'})['state']!='COMPLETED'
 
 
-@pytest.mark.parametrize('won,stage,allowed', [(True,'RUN',True),(False,'RUN',False),(True,'MAIN_MENU',False)])
-def test_only_live_native_won_run_can_replace_its_continue_cache(game,won,stage,allowed):
+@pytest.mark.parametrize('won,stage,allowed', [(True,'RUN',True),(False,'RUN',True),(True,'MAIN_MENU',True)])
+def test_native_new_run_replaces_old_continue_cache(game,won,stage,allowed):
     lua, call, _ = game
     won_options_scene(game,won=won)
     lua.globals().TEST_STAGE=stage
@@ -106,7 +99,7 @@ def test_only_live_native_won_run_can_replace_its_continue_cache(game,won,stage,
 
 
 @pytest.mark.parametrize('won', [True, False])
-def test_native_options_menu_exit_only_after_actual_win(game, won):
+def test_native_options_menu_can_exit_an_old_run(game, won):
     lua, call, _ = game
     won_options_scene(game, won=won)
     source = (ROOT/'.artifacts/game-source/functions/button_callbacks.lua').read_text(encoding='utf-8')
@@ -125,13 +118,9 @@ def test_native_options_menu_exit_only_after_actual_win(game, won):
       end
     ''')
     result=call('act_submit',request(game,'main_menu',{},'native-won-exit'))
-    if not won:
-        assert result['state']=='REJECTED' and result['submitted'] is False
-        assert lua.eval('TEST_NATIVE_EXIT')==0
-    else:
-        assert result['submitted'] is True
-        for _ in range(8):
-            next_frame(game)
-        done=call('action_status',{'action_id':'native-won-exit'})
-        assert done['state']=='COMPLETED' and lua.eval('TEST_NATIVE_EXIT')==1
-        assert done['snapshot']['public']['phase']=='main_menu'
+    assert result['submitted'] is True
+    for _ in range(8):
+        next_frame(game)
+    done=call('action_status',{'action_id':'native-won-exit'})
+    assert done['state']=='COMPLETED' and lua.eval('TEST_NATIVE_EXIT')==1
+    assert done['snapshot']['public']['phase']=='main_menu'

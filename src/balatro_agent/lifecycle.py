@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .local_audit import LocalAudit, canonical, make_dir, safe_path
 from .transport import ReaderError
 from .windows_game import GameProcessError, ProcessIdentity, WindowsGame
+from .installation_registry import RegistrationGuard
 
 ID = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}')
 OBS = re.compile(r'obs-[a-f0-9]{16}-[0-9]+')
@@ -51,6 +52,8 @@ class Record(BaseModel):
 class LifecycleJournal:
     def __init__(self, settings):
         self.root = settings.log_dir / 'lifecycle'
+        self.registration = RegistrationGuard(settings)
+        self._expected_checkpoint = None
 
     def _read(self, path):
         if path.stat().st_size > 8192:
@@ -58,12 +61,15 @@ class LifecycleJournal:
         return json.loads(path.read_text(encoding='utf-8'))
 
     def pending(self):
+        self.registration.check()
         path = safe_path(self.root, 'checkpoint.json')
         if not path.exists():
+            self._expected_checkpoint = {'pending': None}
             return None
         value = self._read(path)
         if set(value) != {'pending'} or value['pending'] is not None and (not isinstance(value['pending'], str) or not ID.fullmatch(value['pending'])):
             raise ValueError('invalid_checkpoint')
+        self._expected_checkpoint = value
         return value['pending']
 
     def _atomic(self, path, value):
@@ -74,7 +80,11 @@ class LifecycleJournal:
         os.replace(temp, path)
 
     def set_pending(self, value):
-        self._atomic(safe_path(self.root, 'checkpoint.json'), {'pending': value})
+        checkpoint = {'pending': value}
+        self.registration.persist('lifecycle', checkpoint,
+                                  lambda: self._atomic(safe_path(self.root, 'checkpoint.json'), checkpoint),
+                                  expected=self._expected_checkpoint)
+        self._expected_checkpoint = dict(checkpoint)
 
     def read(self, operation_id):
         path = safe_path(self.root, operation_id + '.json')

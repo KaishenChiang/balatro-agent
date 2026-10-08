@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import onboarding
 import update_mod
+from balatro_agent.installation_registry import InstallationRegistry, registry_path
 from bootstrap_sources import digest
 from test_distribution import install_layout, closed_backend
 from test_setup import run_helpers, quote, PS
@@ -284,6 +285,106 @@ def test_equivalent_path_spellings_and_extra_settings_are_preserved(tmp_path):
     before = config.read_bytes()
     onboarding.ensure_client(tmp_path, config)
     assert config.read_bytes() == before and onboarding.client_ready(tmp_path, config)
+
+
+def test_current_verified_installation_repairs_paths_pointing_at_parent(automatic_layout):
+    prepare(automatic_layout)
+    root, _, _, mods, config = automatic_layout
+    before = config.read_bytes()
+    wrong = onboarding.relocated_client_bytes(before, root, root.parent)
+    config.write_bytes(wrong)
+    protected = {p: p.read_bytes() for p in mods.rglob('*') if p.is_file()}
+    with pytest.raises(onboarding.NeedsPreparation):
+        prepare(automatic_layout, reuse_only=True)
+    assert prepare(automatic_layout)['prepared']
+    assert config.read_bytes() == before
+    assert all(p.read_bytes() == data for p, data in protected.items())
+    backups = list((root / '.artifacts/backups').glob('client-path-repair-*/config-before.toml'))
+    assert len(backups) == 1 and backups[0].read_bytes() == wrong
+
+
+@pytest.mark.parametrize('old_directory', ['available', 'unavailable'])
+def test_independent_receipt_recovers_redownload_with_wrong_parent_path(automatic_layout, old_directory):
+    prepare(automatic_layout)
+    previous, _, _, mods, config = automatic_layout
+    fresh_layout = downloaded_copy(automatic_layout)
+    fresh = fresh_layout[0]
+    original = config.read_bytes()
+    config.write_bytes(onboarding.relocated_client_bytes(original, previous, previous.parent))
+    protected = {p: p.read_bytes() for p in mods.rglob('*') if p.is_file()}
+    if old_directory == 'unavailable':
+        retained = previous.parent / 'retained-old-source'
+        assert previous.resolve().is_relative_to(previous.parent.resolve())
+        assert retained.resolve().is_relative_to(previous.parent.resolve())
+        previous.rename(retained)
+    result = prepare(fresh_layout)
+    assert result['prepared'] and result['reused_installation']
+    assert onboarding.client_ready(fresh, config)
+    assert config.read_bytes() == onboarding.relocated_client_bytes(original, previous, fresh)
+    assert all(p.read_bytes() == data for p, data in protected.items())
+    registry = InstallationRegistry(registry_path(config))
+    assert Path(registry.read()['root']) == fresh
+    registry.ensure_idle(fresh)
+    assert prepare(fresh_layout, reuse_only=True)['prepared']
+
+
+def test_missing_old_source_cannot_discard_independent_unknown(automatic_layout):
+    prepare(automatic_layout)
+    previous, _, _, mods, config = automatic_layout
+    fresh_layout = downloaded_copy(automatic_layout)
+    registry = InstallationRegistry(registry_path(config))
+    registry.write_checkpoint('executor', previous, {'pending': {'action_id': 'old-UNKNOWN'}, 'input_pending': None})
+    retained = previous.parent / 'retained-old-source'
+    assert previous.resolve().is_relative_to(previous.parent.resolve())
+    assert retained.resolve().is_relative_to(previous.parent.resolve())
+    previous.rename(retained)
+    original = config.read_bytes()
+    protected = {p: p.read_bytes() for p in mods.rglob('*') if p.is_file()}
+    with pytest.raises(ValueError, match='Unresolved independent checkpoint'):
+        prepare(fresh_layout)
+    assert config.read_bytes() == original
+    assert all(p.read_bytes() == data for p, data in protected.items())
+    assert registry.checkpoint('executor', previous)['pending']['action_id'] == 'old-UNKNOWN'
+
+
+def test_same_directory_redownload_restores_only_the_missing_local_receipt(automatic_layout):
+    prepare(automatic_layout)
+    root, _, _, mods, config = automatic_layout
+    ledger = root / 'runs/checks/current-installation.json'
+    original_ledger = ledger.read_bytes()
+    retained = ledger.with_name('retained-original-installation.json')
+    ledger.rename(retained)
+    portable = root / '.artifacts/portable-install.local.json'
+    retained_portable = portable.with_name('retained-original-portable-install.json')
+    original_portable = portable.read_bytes()
+    portable.rename(retained_portable)
+    original_config = config.read_bytes()
+    protected = {p: p.read_bytes() for p in mods.rglob('*') if p.is_file()}
+    result = prepare(automatic_layout)
+    assert result['prepared'] and result['reused_installation']
+    assert ledger.read_bytes() == original_ledger
+    assert retained.read_bytes() == original_ledger
+    assert retained_portable.read_bytes() == original_portable
+    assert config.read_bytes() == original_config
+    assert all(p.read_bytes() == data for p, data in protected.items())
+
+
+@pytest.mark.parametrize('style', ['lf', 'crlf-bom', 'no-final-newline'])
+def test_legacy_config_adds_independent_tracking_without_other_edits(tmp_path, style):
+    config = tmp_path / 'config.toml'
+    onboarding.ensure_client(tmp_path, config)
+    before = config.read_bytes() + b'EXTRA_ENV = "keep"\n'
+    if style == 'crlf-bom':
+        before = b'\xef\xbb\xbf' + before.replace(b'\n', b'\r\n')
+    elif style == 'no-final-newline':
+        before = before.rstrip(b'\n')
+    after = onboarding.tracked_client_bytes(before, config)
+    import tomllib
+    expected = tomllib.loads(before.decode('utf-8-sig'))
+    expected['mcp_servers']['balatro-agent']['env'][onboarding.ENVIRONMENT_KEY] = str(registry_path(config))
+    assert tomllib.loads(after.decode('utf-8-sig')) == expected
+    assert after.startswith(b'\xef\xbb\xbf') == before.startswith(b'\xef\xbb\xbf')
+    assert onboarding.tracked_client_bytes(after, config) == after
 
 
 def test_game_detection_checks_steam_metadata_without_python(tmp_path):

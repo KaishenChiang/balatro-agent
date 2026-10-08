@@ -11,6 +11,7 @@ from .contract import ADAPTER_VERSION, GAME_VERSION, SCHEMA_VERSION, POLICY_VERS
 from .policy import canonical
 from .reader import Reader
 from .transport import ReaderError
+from .installation_registry import RegistrationGuard
 
 
 def rejection(reason, action_id=None):
@@ -28,9 +29,12 @@ class Executor:
         self.input_pending = None
         self.last_request = None
         self.checkpoint_broken = False
+        self.registration = RegistrationGuard(reader.settings)
+        self._expected_checkpoint = {'pending': None, 'input_pending': None}
         try:
             if self.checkpoint.exists():
                 saved = json.loads(self.checkpoint.read_text(encoding='utf-8'))
+                self._expected_checkpoint = saved
                 if saved.get('pending') is not None:
                     self.pending = ActionRequest.model_validate(saved['pending']).model_dump()
                     self.last_request = self.pending
@@ -45,10 +49,16 @@ class Executor:
             self.checkpoint_broken = True
 
     def _save(self):
+        checkpoint = {'pending': self.pending, 'input_pending': self.input_pending}
+        self.registration.persist('executor', checkpoint, lambda: self._save_local(checkpoint),
+                                  expected=self._expected_checkpoint)
+        self._expected_checkpoint = json.loads(canonical(checkpoint))
+
+    def _save_local(self, checkpoint):
         self.root.mkdir(parents=True, exist_ok=True)
         temp = self.checkpoint.with_suffix('.'+uuid.uuid4().hex+'.tmp')
         with temp.open('w', encoding='utf-8') as f:
-            f.write(canonical({'pending': self.pending, 'input_pending': self.input_pending})); f.flush(); os.fsync(f.fileno())
+            f.write(canonical(checkpoint)); f.flush(); os.fsync(f.fileno())
         os.replace(temp, self.checkpoint)
 
     def _record(self, kind, value):
@@ -159,6 +169,10 @@ class Executor:
         if self.reader._tool_lock.locked():
             return self._deliver('act', rejection('action_busy', req['action_id']))
         async with self.reader._tool_lock:
+            try:
+                self.registration.check()
+            except OSError:
+                return self._deliver('act', rejection('checkpoint_unavailable', req['action_id']))
             lifecycle = getattr(self, 'lifecycle', None)
             if lifecycle is not None and lifecycle.blocks_actions():
                 return self._deliver('act', rejection('action_busy', req['action_id']))

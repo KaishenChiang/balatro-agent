@@ -16,7 +16,11 @@ EXE是唯一桌面入口，C#源码和构建收据在windows/；重复的CMD启�
 
 游戏未安装时在下载依赖前提示；需要安装或更新时游戏须正常关闭。已有完整的项目安装按账本与构建哈希核验，直接复用；有源码更新时只更新已记录的项目Mod文件。同名冲突、个人修改、部分安装或未决动作保留并报告，不强制覆盖。
 
-重新下载到新目录时，自动准备可接续Codex当前登记的同一项目安装。它核验旧目录的安装账本、固定文件和备份，检查新旧目录均无未决动作且游戏已正常关闭，先备份账本与配置再生成新目录记录；需要时沿用冻结的Mod更新流程。配置只迁移command／cwd两个路径，其他工具、模型、额外环境和个人设置保留。旧目录与检查点保留为历史，不复制动作状态来绕过UNKNOWN。无法证明来源、文件有改动、旧目录丢失或TOML路径写法无法安全迁移时仍停止，不把这些情况误报为网络超时。
+重新下载到新目录、移动目录或登记误指向父目录时，自动准备按EXE所在的项目目录恢复连接。核验本地安装账本或独立安装凭证、全部安装文件、游戏正常关闭及新旧目录无未决动作后，先备份配置和凭证，再接续原安装；需要时沿用冻结的Mod更新流程。配置只修正本项目的command／cwd；首次启用独立跟踪另加BALATRO_AGENT_REGISTRATION_FILE环境项，其他工具、模型、额外环境和个人设置保留。
+
+独立资料位于Codex配置目录的balatro-agent/：installation.local.json记录项目归属、固定路径和安装哈希；checkpoint-executor.local.json与checkpoint-lifecycle.local.json在提交前保存未决意图，完成后才清除。准备与意图写入使用同一进程间锁；已加载服务校验归属、镜像和本地记录，迁移后的旧连接或过期连接不能覆盖未决操作。旧源码目录不可用时，只有独立凭证完整、镜像无未决动作且安装文件全部匹配才自动接续；同路径重新下载可按相同条件恢复丢失的本地账本。历史凭证保留在history/。
+
+旧目录中的动作记录、UNKNOWN和个人心得仍需保留；自动接续不会找回已经删除的历史。首次从无独立凭证的旧版本迁移仍需旧目录账本，或当前目录的完整已核验安装记录。无法证明来源、文件改动、镜像缺失／不一致、未决动作或TOML路径无法安全改写时停止，详情给出原因，不误报为网络超时。
 
 由Codex执行或自定路径时，在源码根目录运行：
 
@@ -72,9 +76,9 @@ $env:UV_PYTHON_INSTALL_DIR = "$PWD/.tools/python"
 ## 源码交付
 
 ```powershell
-.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.0.0.json
-.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.0.0.json --output deliverables/github-ready-1.0.0
-.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.0.0.json
+.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.0.1.json
+.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.0.1.json --output deliverables/github-ready-1.0.1
+.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.0.1.json
 ```
 
 package要求本次源码检查、开发STDIO、内置固定发行包和最小Mod构建通过，源码哈希保持不变；不以历史游戏胜利作当前版本通过条件。它生成指定的deliverables/审核目录、deliverables/source/下的完整离线源码候选ZIP和逐文件清单，移除AGENTS中的本机操作者段落。自有EXE绑定可审查源码与构建收据，vendor只允许锁定的公开原始归档；不带本机运行环境、个人配置、游戏材料、存档、种子、TEST或备份。已有候选／review目录拒绝覆盖，先保全再重新构建。

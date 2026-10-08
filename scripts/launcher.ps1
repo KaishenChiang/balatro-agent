@@ -192,6 +192,7 @@ function Get-PreparationFailureMessage([string]$Text, [int]$Stage = 0) {
     if ($Text -match 'No unique verified Steam Balatro') { return '未找到唯一的 Steam 版小丑牌，请查看详情。' }
     if ($Text -match 'Close Balatro normally|normally closed') { return '请正常关闭小丑牌，然后重试。' }
     if ($Text -match 'checkpoint|Unresolved') { return '上一会话的操作尚未确认，请查看详情。' }
+    if ($Text -match 'Previous registered project is unavailable') { return '旧项目目录不可用，且缺少独立安装凭证；请查看详情中的旧路径。' }
     if ($Text -match 'Mod/injector|receipt|differs|existing|Existing|adoption|registration') { return '已有配置或安装需要核对，请查看详情。' }
     if ($Text -match '\btimed out\b|\btimeout(?:error)?\b|超时|\bstalled\b|HTTPS download|remote server|远程服务器') {
         if ($Stage -eq 4) { return '本地连接检查超时，请查看详情后重试。' }

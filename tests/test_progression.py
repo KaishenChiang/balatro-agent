@@ -210,7 +210,7 @@ def test_setup_only_rendered_candidates_and_native_unlocked_click(game, kind):
     assert call('act_submit', req)['duplicate'] is True and lua.eval('TEST_SETUP_CLICKS') == 1
 
 
-@pytest.mark.parametrize('gate', ['seed', 'challenge', 'locked', 'foreign', 'unfinished', 'hidden_setup'])
+@pytest.mark.parametrize('gate', ['seed', 'challenge', 'locked', 'foreign', 'hidden_setup'])
 def test_native_progression_start_rejects_unsafe_configuration(game, gate):
     lua, call, _ = game
     setup_scene(game, 'stake')
@@ -235,8 +235,6 @@ def test_native_progression_start_rejects_unsafe_configuration(game, gate):
         lua.execute("SMODS.RunSelect.Setup.choices.stake_choice='stake_gold'")
     elif gate == 'foreign':
         lua.execute("SMODS.RunSelect.Setup.choices.deck_choice='b_hidden'")
-    elif gate == 'unfinished':
-        lua.execute('G.STAGE=G.STAGES.RUN; G.GAME.won=false; G.SAVED_GAME={}')
     elif gate == 'hidden_setup':
         lua.execute("local snapshot=BA_READER.snapshot; BA_READER.snapshot=function(...) local s=snapshot(...); s.public.setup.deck_name=nil; return s end")
     result = call('act_submit', request(game, 'start_run', {}, 'unsafe-start'))
@@ -279,8 +277,8 @@ def test_rendered_stake_tower_uses_top_chip_and_ignores_holding_area(game, page,
 
 
 @pytest.mark.parametrize('deck,stake', [('b_red', 'stake_red'), ('b_blue', 'stake_white')])
-@pytest.mark.parametrize('save,allowed', [(None, True), ('won', True), ('unfinished', False),
-    ('unknown', False), ('truthy', False), ('placeholder_won', False)])
+@pytest.mark.parametrize('save,allowed', [(None, True), ('won', True), ('unfinished', True),
+    ('unknown', True), ('truthy', True), ('placeholder_won', True)])
 def test_unlocked_native_nondefault_start_allowed(game, deck, stake, save, allowed):
     lua, call, _ = game
     setup_scene(game, 'stake')
@@ -315,8 +313,8 @@ def test_unlocked_native_nondefault_start_allowed(game, deck, stake, save, allow
         assert result['state'] == 'REJECTED' and result['reason'] == 'wrong_phase'
 
 
-@pytest.mark.parametrize('case,allowed', [('normal_loss',True),('unknown_cached_run',False),('unfinished_run',False)])
-def test_climb_new_attempt_after_loss_preserves_unfinished_and_unknown_runs(game,case,allowed):
+@pytest.mark.parametrize('case,allowed', [('normal_loss',True),('unknown_cached_run',True),('unfinished_run',True)])
+def test_native_new_run_can_replace_an_existing_saved_or_unfinished_run(game,case,allowed):
     lua,call,_=game
     setup_scene(game,'stake')
     lua.execute('''

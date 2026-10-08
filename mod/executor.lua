@@ -20,7 +20,7 @@ local phases={sort_rank={hand=true},sort_suit={hand=true},play={hand=true},disca
   reroll={shop=true},cash_out={round_eval=true},next_round={shop=true},skip_pack={pack=true},
   buy={shop=true},buy_and_use={shop=true},sell={shop=true,hand=true,blind_select=true,pack=true},
   use={shop=true,hand=true,blind_select=true,pack=true},select_pack_card={pack=true},
-  open_run_setup={main_menu=true,terminal=true,menu=true,shop=true,round_eval=true,blind_select=true,hand=true},next_setup_page={main_menu=true,menu=true},
+  open_run_setup={main_menu=true,terminal=true,menu=true,shop=true,round_eval=true,blind_select=true,hand=true,pack=true},next_setup_page={main_menu=true,menu=true},
   previous_setup_page={main_menu=true,menu=true},start_run={main_menu=true,menu=true},continue_run={main_menu=true},
   run_info={hand=true,blind_select=true,shop=true,pack=true,round_eval=true},
   deck_info={hand=true,blind_select=true,shop=true,pack=true,round_eval=true},close_menu={menu=true,main_menu=true},
@@ -304,11 +304,6 @@ local function ui_plan(req,snapshot)
     local next_index=((cycle.current_option+(req.action=='next_game_speed' and 1 or -1)-1)%4)+1
     expected_speed=cycle.options[next_index]
   end
-  if req.action=='open_run_setup' and snapshot.public.phase~='main_menu' and snapshot.public.phase~='terminal'
-     and not (G.GAME and G.GAME.won) then return nil,'wrong_phase' end
-  if req.action=='main_menu' and snapshot.public.phase~='terminal' and not (G.STAGE==G.STAGES.RUN and G.GAME and G.GAME.won==true) then
-    return nil,'wrong_phase'
-  end
   local card=node and node.config.ref_table
   if req.action=='buy' and card and not space_available(card) then return nil,'insufficient_capacity' end
   -- Native Card.check_use produces an alert for full Ankh capacity. Detect
@@ -324,14 +319,8 @@ local function ui_plan(req,snapshot)
     -- do not inspect a face-down card's hidden ability to add a refusal.
   end
   if req.action=='start_run' then
-    if G.STAGE==G.STAGES.RUN and G.STATE~=G.STATES.GAME_OVER and not (G.GAME and G.GAME.won) then return nil,'wrong_phase' end
-    -- Native can_continue also retains completed saves across process restarts.
-    -- Check only its native terminal flag at submission; do not export or decode
-    -- save contents. Unknown flags and every unfinished save remain protected.
-    local won_run=G.STAGE==G.STAGES.RUN and G.GAME and G.GAME.won==true
-    local saved_won=G.STAGE==G.STAGES.MAIN_MENU and type(G.SAVED_GAME)=='table'
-      and type(G.SAVED_GAME.GAME)=='table' and G.SAVED_GAME.GAME.won==true
-    if G.SAVED_GAME~=nil and E.finished_game~=G.GAME and not won_run and not saved_won then return nil,'wrong_phase' end
+    -- An enabled native New Run button may replace a saved/unfinished run.
+    -- Observation/profile, pending-action and native setup checks still apply.
     if not random_native_setup(snapshot) then return nil,'unsupported_rule' end
   end
   return function(rec)
@@ -354,7 +343,7 @@ local function ui_plan(req,snapshot)
       if req.action=='open_run_setup' and name=='options' then
         rec.setup_navigation=true; rec.options_overlay=G.OVERLAY_MENU; rec.options_game=G.GAME
         G.E_MANAGER:add_event(Event({blocking=false,blockable=false,func=function()
-          if G.GAME~=rec.options_game or not G.GAME.won or G.OVERLAY_MENU~=rec.options_overlay then
+          if G.GAME~=rec.options_game or G.OVERLAY_MENU~=rec.options_overlay then
             rec.failed='native_error'; return true
           end
           local current=BA_READER.snapshot()

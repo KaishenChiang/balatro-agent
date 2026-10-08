@@ -54,7 +54,7 @@ function Get-BalatroPlayPrompt([string]$ProjectRoot, [switch]$InlineRules,
         'climb' { '爬塔模式：从所选牌组已解锁的最高注级开始。正常失败后先报告本局并复盘，再重新开局重试当前注级；通关后重新核验解锁，升到紧接的下一注级继续，直到金注通关后停止并保留结算页面与窗口。允许连续尝试，不设正常败局重试次数上限；用户叫停即停止，故障、UNKNOWN、未解锁或无法确认状态不能当作败局来重试。不继续无尽模式。' }
         default { '单局模式：只游玩所选牌组与固定注级的一局。正常胜利或失败后停止并保留结算页面与窗口，不自动重试。' }
     }
-    $selection += [Environment]::NewLine + '这些选择是本次任务授权。指定牌组或固定注级未解锁时明确通知并停止，不自行替换；无法确认解锁时报告未确认。每局报告实际牌组、注级、胜负、到达底注／回合、用时，以及心得已更新并读回、未更新或更新失败。'
+    $selection += [Environment]::NewLine + '这些选择是本次任务授权，开始新局可通过原生菜单替换未完成旧局；本次目标局开始后不自行中途重开，未决动作与UNKNOWN仍先核验原记录。指定牌组或固定注级未解锁时明确通知并停止，不自行替换；无法确认解锁时报告未确认。每局报告实际牌组、注级、胜负、到达底注／回合、用时，以及心得已更新并读回、未更新或更新失败。'
     $context = '项目目录：' + $portablePath + [Environment]::NewLine
     if (-not $InlineRules) { return $context + $selection + [Environment]::NewLine + [Environment]::NewLine + $task }
     $rules = [IO.File]::ReadAllText((Join-Path $directory 'prompts/bootstrap.md'), [Text.Encoding]::UTF8).Trim()
