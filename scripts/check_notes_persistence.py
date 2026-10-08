@@ -13,6 +13,19 @@ from balatro_agent.notes import NotesStore
 ROOT=Path(__file__).resolve().parents[1]
 
 
+def matches_delivery(note, disk, view='full'):
+    # content view omits Markdown, but retains the immutable revision identity.
+    # The disk parser still verifies content, request hash and canonical rendering.
+    fields = ('note_id', 'kind', 'revision', 'created_utc', 'write_id', 'content')
+    expected_keys = set(disk) - ({'markdown'} if view == 'content' else set())
+    return (view in ('full', 'content') and set(note) == expected_keys
+            and all(note.get(key) == disk[key] for key in fields)
+            and type(note.get('current_revision')) is int
+            and disk['revision'] <= note['current_revision'] <= 100
+            and note.get('source_validation') == disk['source_validation']
+            and (view == 'content' or note['markdown'] == disk['markdown']))
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kind',choices=['experience','TEST'],required=True)
@@ -29,13 +42,18 @@ def main():
     safe_path(ROOT,*output.relative_to(ROOT).parts)
     rows=[json.loads(line) for line in evidence.read_text(encoding='utf-8-sig').splitlines() if line.strip()]
     assert rows[0]['evidence_type'] in ('codex_actual_mcp_construction','codex_actual_mcp_formal_acceptance')
-    disk=NotesStore(ROOT/'experience').read(args.kind,[args.note_id],args.revision)['notes'][0]
+    disk=NotesStore(ROOT/'runs/local-experience',baseline_root=ROOT/'experience').read(args.kind,[args.note_id],args.revision)['notes'][0]
     matches=[]
     for index,row in enumerate(rows,1):
         result=row.get('result',{})
+        if result.get('status') != 'ok':
+            continue
+        view = row.get('parameters', {}).get('view', 'full') if row.get('tool') == 'read_notes' else 'full'
+        if row.get('tool') == 'write_note' and result.get('write_state') != 'COMMITTED':
+            continue
         delivered=result.get('notes',[]) if row.get('tool')=='read_notes' else [result.get('note',{})] if row.get('tool')=='write_note' else []
         for note in delivered:
-            if note.get('note_id')==args.note_id and note.get('revision')==args.revision and note.get('content')==disk['content'] and note.get('markdown')==disk['markdown']:
+            if matches_delivery(note, disk, view):
                 matches.append(index)
     assert matches, 'No matching actual delivered note.'
     result={'evidence_type':'independent_process_disk_notes_verification','utc':datetime.now(timezone.utc).isoformat(),

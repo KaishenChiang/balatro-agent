@@ -29,7 +29,8 @@ def settings(tmp_path, monkeypatch):
     evidence.write_text("SYNTHETIC ONLY. No UI verification.",encoding="utf-8")
     profile = tmp_path / "profile.json"
     profile.write_text(json.dumps({"profile":3,"native_ui_verified":True,"evidence":"runs/checks/native-profile-synthetic.md"}),encoding="utf-8")
-    return Settings(profile_file=profile,log_dir=tmp_path / "logs",poll_interval_s=0.01)
+    return Settings(profile_file=profile,log_dir=tmp_path / "logs",notes_dir=tmp_path / "experience",
+                    baseline_notes_dir=None,poll_interval_s=0.01)
 
 
 @pytest.fixture

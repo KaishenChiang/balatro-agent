@@ -49,6 +49,12 @@ def status():
         result['bundled_dependencies_verified'] = bool(verified_bundles(ROOT))
     except (OSError,ValueError,KeyError):
         result['bundled_dependencies_verified'] = False
+    built = ROOT / '.artifacts/built-mod/balatrobot'
+    manifest = json.loads((ROOT / 'mod/build-manifest.json').read_text())['files']
+    runtime = [i for i in manifest if i['path'] != 'reader-profile.json']
+    result['built_runtime_files'] = len(runtime)
+    result['built_runtime_hashes_match'] = bool(runtime) and all(
+        hash_match(built / i['path'], i['sha256']) is True for i in runtime)
     installation = ROOT / 'runs/checks/current-installation.json'
     if installation.exists():
         entries = json.loads(installation.read_text(encoding='utf-8-sig'))['installed_files']
@@ -56,12 +62,7 @@ def status():
         result['installed_files'] = len(entries)
         result['installed_hashes_match'] = None if None in matched else all(matched)
         result['installed_files_unavailable'] = sum(v is None for v in matched)
-        built = ROOT / '.artifacts/built-mod/balatrobot'
-        manifest = json.loads((ROOT / 'mod/build-manifest.json').read_text())['files']
-        runtime = [i for i in manifest if i['path'] != 'reader-profile.json']
         mods = {Path(i['path']).parents[1] for i in entries if Path(i['path']).name == 'balatrobot.json'}
-        result['built_runtime_files'] = len(runtime)
-        result['built_runtime_hashes_match'] = all((built / i['path']).is_file() and digest(built / i['path']) == i['sha256'] for i in runtime)
         correspondence = [hash_match(next(iter(mods)) / 'balatrobot' / i['path'], i['sha256']) for i in runtime] if len(mods) == 1 else [False]
         result['installed_runtime_matches_build'] = None if None in correspondence else all(correspondence)
     return result
@@ -71,11 +72,28 @@ def run_script(name, *args):
     return subprocess.run([sys.executable, str(ROOT / 'scripts' / name), *args], cwd=ROOT, check=False).returncode
 
 
-def check(output):
+def check_health(static, *, source_only=False):
+    source = (static.get('single_stdio_entrypoint') is True
+              and static.get('packaged_gui_launcher_verified') is True
+              and static.get('bundled_dependencies_verified') is True
+              and static.get('built_runtime_hashes_match') is True
+              and bool(static.get('fixed_downloads'))
+              and all(i.get('hash_match') is True for i in static['fixed_downloads']))
+    installation_keys = ('installed_hashes_match', 'installed_runtime_matches_build')
+    installation = (all(static.get(k) is True for k in installation_keys)
+                    if any(k in static for k in installation_keys) else None)
+    return {'source_status_passed': source, 'recorded_installation_passed': installation,
+            'installation_required': not source_only,
+            'static_checks_passed': source and (source_only or installation is not False)}
+
+
+def check(output, *, source_only=False):
     from balatro_agent.local_audit import safe_path
     target = (ROOT / output).absolute()
     assert target.is_relative_to(ROOT / 'runs/checks') and '..' not in target.parts
     safe_path(ROOT, *target.relative_to(ROOT).parts)
+    if target.exists() or target.with_suffix('.xml').exists() or target.with_name(target.stem + '-stdio.json').exists():
+        raise ValueError('Preserve previous check evidence and choose a new output')
     target.parent.mkdir(parents=True, exist_ok=True)
     xml = target.with_suffix('.xml')
     stdio = target.with_name(target.stem + '-stdio.json')
@@ -97,18 +115,19 @@ def check(output):
              'development_stdio_report': stdio.relative_to(ROOT).as_posix(),
              'codex_actual_invocation': False, 'status': status(), 'source_snapshot': before,
              'source_unchanged_during_check': before == source_snapshot(ROOT)}
+    value['scope'] = 'source_only' if source_only else 'source_and_recorded_installation'
+    value.update(check_health(value['status'], source_only=source_only))
     target.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(value, ensure_ascii=False))
-    static = value['status']
-    healthy = (static['single_stdio_entrypoint'] and all(i['hash_match'] for i in static['fixed_downloads'])
-               and all(static.get(k, True) for k in ('installed_hashes_match', 'built_runtime_hashes_match', 'installed_runtime_matches_build')))
-    return tested or smoke or (0 if healthy and value['source_unchanged_during_check'] else 1)
+    return tested or smoke or (0 if value['static_checks_passed'] and value['source_unchanged_during_check'] else 1)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['prepare', 'status', 'diagnose', 'configure-display', 'check', 'build', 'build-launcher', 'package', 'verify-package', 'verify-offline', 'update-mod', 'timings', 'audit'])
     parser.add_argument('--output')
+    parser.add_argument('--source-only', action='store_true')
+    parser.add_argument('--check-report')
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--console', choices=['hidden', 'visible'])
     parser.add_argument('--loading', choices=['hidden', 'visible'])
@@ -122,6 +141,10 @@ def main():
     parser.add_argument('--reuse-only', action='store_true')
     parser.add_argument('--preparation-id')
     args = parser.parse_args()
+    if args.source_only and args.command != 'check':
+        parser.error('--source-only is only valid with check')
+    if args.check_report and args.command != 'package':
+        parser.error('--check-report is only valid with package')
     if any((args.steam_dir, args.library_dir, args.mods_dir, args.codex_config, args.reuse_only, args.preparation_id)) and args.command != 'prepare':
         parser.error('Preparation options are only valid with prepare')
     if args.command == 'prepare':
@@ -179,7 +202,7 @@ def main():
     if args.command == 'status':
         print(json.dumps(status(), ensure_ascii=False, indent=2)); return 0
     if args.command == 'check':
-        return check(output)
+        return check(output, source_only=args.source_only)
     if args.command == 'build':
         return run_script('build_mod.py')
     if args.command == 'build-launcher':
@@ -188,7 +211,10 @@ def main():
         return subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
             '-File', str(ROOT / 'scripts/build_launcher.ps1')], cwd=ROOT, check=False).returncode
     if args.command == 'package':
-        return run_script('package_source.py', *(('--review-dir', args.output) if args.output else ()))
+        arguments = ['--review-dir', args.output] if args.output else []
+        if args.check_report:
+            arguments += ['--check-report', args.check_report]
+        return run_script('package_source.py', *arguments)
     if args.command == 'verify-offline':
         return run_script('verify_offline.py', '--output', args.output or 'runs/checks/offline-preparation.json')
     return run_script('verify_source_candidate.py', '--output', output)

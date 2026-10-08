@@ -8,6 +8,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [Windows.Forms.Application]::EnableVisualStyles()
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+. (Join-Path $PSScriptRoot 'codex_handoff.ps1')
 $script:process = $null
 $script:stdoutPath = $null
 $script:stderrPath = $null
@@ -33,14 +34,39 @@ function Read-PreparationReceipt([string]$Path, [string]$Id) {
     return $value
 }
 
+function Update-PlayPrompt {
+    $deckKey = [string]$deckChoice.SelectedItem.Key
+    $stakeKey = [string]$stakeChoice.SelectedItem.Key
+    $script:promptText = Get-BalatroPlayPrompt $root -InlineRules -DeckKey $deckKey -StakeChoice $stakeKey
+    $script:codexLink = Get-BalatroCodexLink $root (Get-BalatroPlayPrompt $root -DeckKey $deckKey -StakeChoice $stakeKey)
+    $modeDetail.Text = switch ($stakeKey) {
+        'highest' { '游戏内核验解锁；尝试该牌组的最高已解锁注级。' }
+        'climb' { '从最高已解锁注级开始；失败重试，获胜升一级，金注通关后停止。' }
+        default { '游戏内核验解锁；一局胜负后保留结算页面。' }
+    }
+}
+
+function Copy-PlayPrompt { Update-PlayPrompt; [Windows.Forms.Clipboard]::SetText($promptText) }
+
 function Open-Codex {
+    Update-PlayPrompt
+    $protocol = Get-Item -LiteralPath 'Registry::HKEY_CLASSES_ROOT\codex' -ErrorAction SilentlyContinue
+    if ($protocol -and $protocol.GetValueNames() -contains 'URL Protocol') {
+        try {
+            Start-Process -FilePath $codexLink -WindowStyle Hidden
+            $detail.Text = '已请求打开项目并填入提示，确认后发送即可。'
+            return
+        } catch { $script:desktopError = 'Codex 项目链接未能打开。' }
+    }
+    Copy-PlayPrompt
     $apps = @(Get-StartApps | Where-Object { $_.Name -eq 'Codex' })
     if ($apps.Count -eq 0) { $apps = @(Get-StartApps | Where-Object { $_.AppID -like 'OpenAI.Codex_*' }) }
     if ($apps.Count -eq 1) {
         Start-Process -FilePath (Join-Path $env:SystemRoot 'explorer.exe') -ArgumentList ('shell:AppsFolder\' + $apps[0].AppID) -WindowStyle Hidden
+        $detail.Text = '完整提示已复制，在 Codex 的本地聊天粘贴发送。'
     } else {
-        Start-Process 'https://developers.openai.com/codex/app/'
-        $detail.Text = '安装并登录 Codex，再选择本项目目录。'
+        Start-Process -FilePath 'https://developers.openai.com/codex/app/' -WindowStyle Hidden
+        $detail.Text = '安装并登录 Codex 后，粘贴已复制的完整提示。'
     }
 }
 
@@ -50,7 +76,7 @@ $accent = [Drawing.Color]::FromArgb(38, 91, 66)
 $paper = [Drawing.Color]::FromArgb(249, 248, 245)
 $form = New-Object Windows.Forms.Form
 $form.Text = 'Balatro Agent'
-$form.ClientSize = New-Object Drawing.Size(430, 278)
+$form.ClientSize = New-Object Drawing.Size(430, 390)
 $form.StartPosition = 'CenterScreen'
 $form.FormBorderStyle = 'FixedSingle'
 $form.MaximizeBox = $false
@@ -80,9 +106,30 @@ $progress.Size = New-Object Drawing.Size(380, 5)
 $progress.Style = 'Marquee'; $progress.MarqueeAnimationSpeed = 25
 $form.Controls.Add($progress)
 
+$deckLabel = Add-Label '牌组' 25 202 183 20 9 $muted
+$stakeLabel = Add-Label '注级／模式' 222 202 183 20 9 $muted
+$playChoices = Get-BalatroPlayChoices
+function Add-Choice($Items, [int]$X) {
+    $choice = New-Object Windows.Forms.ComboBox
+    $choice.Location = New-Object Drawing.Point($X, 225)
+    $choice.Size = New-Object Drawing.Size(183, 28)
+    $choice.DropDownStyle = 'DropDownList'; $choice.DisplayMember = 'Name'
+    $choice.DropDownWidth = 220; $choice.MaxDropDownItems = 10
+    foreach ($item in $Items) { $choice.Items.Add($item) | Out-Null }
+    $choice.SelectedIndex = 0; $choice.Enabled = $false
+    $form.Controls.Add($choice)
+    return $choice
+}
+$deckChoice = Add-Choice $playChoices.Decks 25
+$stakeChoice = Add-Choice $playChoices.Stakes 222
+$modeDetail = Add-Label '' 25 260 380 42 9 $muted
+$deckChoice.Add_SelectedIndexChanged({ Update-PlayPrompt })
+$stakeChoice.Add_SelectedIndexChanged({ Update-PlayPrompt })
+Update-PlayPrompt
+
 function Add-Button([string]$Text, [int]$X, [bool]$Primary) {
     $button = New-Object Windows.Forms.Button
-    $button.Text = $Text; $button.Location = New-Object Drawing.Point($X, 203)
+    $button.Text = $Text; $button.Location = New-Object Drawing.Point($X, 314)
     $button.Size = New-Object Drawing.Size(183, 36)
     $button.FlatStyle = 'Flat'; $button.Cursor = 'Hand'
     $button.BackColor = if ($Primary) { $accent } else { [Drawing.Color]::White }
@@ -92,18 +139,20 @@ function Add-Button([string]$Text, [int]$X, [bool]$Primary) {
     $button.Visible = $false; $form.Controls.Add($button)
     return $button
 }
-$open = Add-Button '打开 Codex' 25 $true
+$open = Add-Button '在 Codex 中开始' 25 $true
 $copy = Add-Button '复制游玩提示' 222 $false
 $open.Enabled = $false; $copy.Enabled = $false
-$promptText = (Get-Content -LiteralPath (Join-Path $root 'prompts/first-use.md') -Raw -Encoding UTF8).Trim()
-$copy.Add_Click({ [Windows.Forms.Clipboard]::SetText($promptText); $detail.Text = '提示已复制。在 Codex 选择本项目，粘贴发送。' })
-$open.Add_Click({ try { Open-Codex } catch { $detail.Text = '请手动打开 Codex，并选择本项目目录。' } })
+$copy.Add_Click({
+    try { Copy-PlayPrompt; $detail.Text = '含路径与操作规则的提示已复制，直接粘贴发送。' }
+    catch { $detail.Text = '剪贴板暂不可用，请稍后再次复制。' }
+})
+$open.Add_Click({ try { Open-Codex } catch { $detail.Text = '请手动打开 Codex，再复制游玩提示发送。' } })
 $retry = Add-Button '重试' 25 $true
 $retry.Enabled = $false
 $retry.Add_Click({ try { Start-Preparation } catch { Show-PreparationError } })
 
 $path = New-Object Windows.Forms.LinkLabel
-$path.Text = '复制项目路径'; $path.Location = New-Object Drawing.Point(25, 252)
+$path.Text = '复制项目路径'; $path.Location = New-Object Drawing.Point(25, 366)
 $path.Size = New-Object Drawing.Size(180, 20); $path.LinkColor = $muted
 $path.ActiveLinkColor = $accent; $path.VisitedLinkColor = $muted
 $path.LinkBehavior = 'HoverUnderline'
@@ -112,7 +161,7 @@ $form.Controls.Add($path)
 $tooltip = New-Object Windows.Forms.ToolTip
 $tooltip.SetToolTip($path, $root)
 $logLink = New-Object Windows.Forms.LinkLabel
-$logLink.Text = '详情'; $logLink.Location = New-Object Drawing.Point(371, 252)
+$logLink.Text = '详情'; $logLink.Location = New-Object Drawing.Point(371, 366)
 $logLink.Size = New-Object Drawing.Size(35, 20); $logLink.LinkColor = $muted
 $logLink.ActiveLinkColor = $accent; $logLink.VisitedLinkColor = $muted
 $logLink.LinkBehavior = 'HoverUnderline'
@@ -131,9 +180,10 @@ $form.Controls.Add($logLink)
 function Complete-Preparation {
     $script:prepared = $true
     $status.Text = '准备就绪'; $status.ForeColor = $accent
-    $detail.Text = '打开 Codex，选择本项目，再发送游玩提示。'
+    $detail.Text = '在 Codex 中开始，或复制完整提示直接发送。'
     $progress.Visible = $false
     $copy.Enabled = $true; $open.Enabled = $true; $copy.Visible = $true; $open.Visible = $true
+    $deckChoice.Enabled = $true; $stakeChoice.Enabled = $true
     $retry.Enabled = $false; $retry.Visible = $false
     $form.ActiveControl = $open
 }
@@ -163,6 +213,7 @@ function Show-PreparationError {
 function Start-Preparation {
     $script:prepared = $false
     $copy.Enabled = $false; $open.Enabled = $false; $copy.Visible = $false; $open.Visible = $false
+    $deckChoice.Enabled = $false; $stakeChoice.Enabled = $false
     $retry.Enabled = $false; $retry.Visible = $false
     $status.Text = '正在检查游戏'; $status.ForeColor = $ink
     $detail.Text = '自动准备所需组件，请稍候。'

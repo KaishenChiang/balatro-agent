@@ -309,18 +309,6 @@ def test_missing_game_stops_before_bootstrap_download(tmp_path):
     assert '1/4' not in result.stdout
 
 
-@pytest.mark.parametrize('code', [0, 19])
-def test_desktop_entry_handles_chinese_spaces_and_shell_punctuation(tmp_path, code):
-    if not PS: pytest.skip('Windows batch launcher')
-    root = tmp_path / '中文 path & bang!'; scripts = root / 'scripts'; scripts.mkdir(parents=True)
-    entry = root / 'Balatro Agent.cmd'; shutil.copyfile(ROOT / entry.name, entry)
-    (scripts / 'launcher.ps1').write_text(
-        "[IO.File]::WriteAllText((Join-Path $PSScriptRoot '../called.txt'), $PSScriptRoot)\n" + f'exit {code}\n', encoding='ascii')
-    command = f'"{os.environ["COMSPEC"]}" /d /v:off /s /c ""{entry}""'
-    result = subprocess.run(command, cwd=tmp_path, capture_output=True, text=True, errors='replace', timeout=30)
-    assert result.returncode == code and (root / 'called.txt').read_text(encoding='utf-8') == str(scripts)
-
-
 @pytest.mark.parametrize('reuse_exit', [0, 1, 2])
 def test_automatic_bootstrap_orchestrates_one_prepare_and_reuses_early(tmp_path, reuse_exit):
     if not PS: pytest.skip('Windows PowerShell')
@@ -395,6 +383,8 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     root = tmp_path / '中文 desktop & bang!'; scripts = root / 'scripts'; scripts.mkdir(parents=True)
     prompts = root / 'prompts'; prompts.mkdir()
     (prompts / 'first-use.md').write_text('Read bootstrap and play. Report the result.', encoding='utf-8')
+    (prompts / 'bootstrap.md').write_text('Synthetic public MCP rules.', encoding='utf-8')
+    shutil.copyfile(ROOT / 'scripts/codex_handoff.ps1', scripts / 'codex_handoff.ps1')
     interpreter = root / '.venv/Scripts/python.exe'; interpreter.parent.mkdir(parents=True)
     shutil.copyfile(sys.executable, interpreter)
     (root / '.venv/pyvenv.cfg').write_text(f'home = {sys.base_prefix}\ninclude-system-site-packages = false\n', encoding='utf-8')

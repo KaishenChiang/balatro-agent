@@ -67,7 +67,11 @@ act(action, parameters, observation_id, action_id, reason, experience_refs)提�
 
 商店包打开和优惠券兑换按can_open／can_redeem映射buy，保留原生门槛。包内塔罗／星球／幻灵即用应提交use，手牌目标单独select；取牌和使用不能互换，程序不自动改成另一个语义。0.6.1在选中前拒绝只有使用按钮的消费品取牌请求；未知直接协议时按实际定义先选择公开目标。
 
-Continue页已渲染且next_setup_page启用的“新的一局”可原生切页。旧局已由原生加载且won严格为true时才允许新开；未完成、缺字段、其他truthy值及菜单占位状态均拒绝，不解码或删存档绕过。更高注级／其他牌组能力不扩大当前红白基线授权。
+Continue页已渲染且next_setup_page启用的“新的一局”可原生切页。旧局已由原生加载且won严格为true时才允许新开；未完成、缺字段、其他truthy值及菜单占位状态均拒绝，不解码或删存档绕过。用户可明确指定原版牌组与固定注级、最高已解锁注级或爬塔；先核验所选牌组，再核对其当前公开注级候选，锁定或无法确认时停止，不强制解锁。
+
+固定注级与最高已解锁注级只尝试一局。明确爬塔授权后，从该牌组最高已解锁注级开始，正常失败先报告再重试当前注级；获胜后重新核验原生解锁，按白／红／绿／黑／蓝／紫／橙／金紧接升一级，直至金注通关或用户叫停。每局保留失败与经验收据；故障和UNKNOWN不能计作正常败局或触发自动重试。必要新局导航仍使用当前观察下的原生动作，不覆盖未完成局。
+
+observe／wait_until_ready成功返回的server_time={utc,unix_s}是服务端墙钟元数据，不属于游戏观察或observation_id。单局时长采用开局提交前的observe至终局确认后observe的时间差，包括客户端决策与执行等待，不代表纯推理时间。缺起点、旧服务无时钟或时钟倒退时用时未确认。每局简短报告实际牌组、注级、胜负、底注／回合、时长与心得是否更新；“已更新”须有本局成功写入且read_notes读回确认，无新增可报告未更新。
 
 ## 去重、完成与不确定性
 
@@ -92,7 +96,7 @@ AWAITING_INPUT/native_unlock_input仅适用于已确认导航回调产生的当�
 
 ## 正常启动、关闭与丢失会话
 
-launch_game(operation_id, timeout_s=25)未运行时核验Steam并正常启动固定AppID2379780；已运行只核验并请求显示已有窗口，不重复启动或点击。close_game(operation_id, observation_id, timeout_s=15)只允许已识别当前档位、匹配观察、ready、正常终局或无当前对局主菜单、无未决动作，以正常WM_CLOSE确认进程停止，不强杀。
+launch_game(operation_id, timeout_s=25)未运行时核验Steam并正常启动固定AppID2379780；已运行只核验并请求显示已有窗口，不重复启动或点击。每局结算先保存并读回心得、通知基础信息与结果；默认单局或爬塔完成后停留结算页面并保留窗口。仅明确爬塔授权允许本局报告后的正常下一局导航，所有模式不自动关窗。只有用户另行明确要求关闭游戏时，模型才调用close_game(operation_id, observation_id, timeout_s=15)；它只允许已识别当前档位、匹配观察、ready、正常终局或无当前对局主菜单、无未决动作，以正常WM_CLOSE确认进程停止，不强杀。
 
 同operation_id同参数读取持久记录；UNKNOWN或超时不换ID重做。游戏动作UNKNOWN时仅可显示已运行窗口，不能新启动或关闭。焦点未确认与进程状态分开报告，正常关窗不证明磁盘所有数据全部落盘。
 
@@ -102,11 +106,13 @@ RETIRED只代表封存成功，original_action_state=UNKNOWN、normal_game_compl
 
 ## 经验与公开计算
 
-read_notes(kind="experience", note_ids=null, revision=null, view="full")实际读盘；省略note_ids读取当前正式经验，[]返回空。指定历史revision时只传一个编号；未知编号not_found。health与定义支持content视图时可省去重复Markdown，保留相同完整字段与修订元数据，不改变文件。
+read_notes(kind="experience", note_ids=null, revision=null, view="full")实际读盘；开局指定note_ids=["EXP-GENERAL-GUIDE"]，其他主题按当前条件读取。主攻略不存在时才省略note_ids读取可用正式经验；省略仍兼容读取全部，[]返回空。指定历史revision时只传一个编号；未知编号not_found。health与定义支持content视图时可省去重复Markdown，保留相同完整字段与修订元数据，不改变文件。新聊天或压缩后引用不清时重读，笔记只改变可读取上下文，不改变模型参数。
 
 write_note(note_id, content, expected_revision, write_id, kind="experience")创建expected_revision=0，更新必须匹配当前修订。EXP-／TEST-编号与分区匹配，仅大写字母、数字、连字符。content含sources(run_id、steps)、facts、interpretation、conditions、counterexamples、confidence(low／medium／high)、revision_reason。模型撰写策略解释，程序校验结构；来源真实性须对照实际交付。
 
-正式笔记目录experience/experience/，TEST独立；r0001.md等为不可变完整版本，HEAD.json是原子提交指针。先fsync版本再原子更新HEAD，保留历史；同写ID同内容恢复，异内容拒绝。禁止穿越、绝对路径、符号链接／联接、reparse点、设备或流名称；残留跨进程锁报busy，不自动删除。写入后实际读回，独立进程验证持久化。
+正式基线目录experience/experience/只读；个人修订目录runs/local-experience/experience/优先读取，TEST独立且不继承基线。首次修订将该主题全部已验证基线历史复制到本地，再追加新版本并提交本地HEAD；部分复制失败保留文件，无本地HEAD时仍读基线，同请求可恢复，已有修订不得覆盖。源码升级后已修订主题只读自己的完整历史，不自动拼接新基线；未修订主题跟随基线。本地经验不上传、提交或反写源码。
+
+r0001.md等为不可变完整版本，HEAD.json是原子提交指针。先fsync版本再原子更新HEAD，保留历史；同写ID同内容恢复，异内容拒绝。禁止穿越、绝对路径、符号链接／联接、reparse点、设备或流名称；残留跨进程锁报busy，不自动删除。写入后实际读回，独立进程验证full与content视图的完整内容和修订身份。写入前health须实际声明primary_experience_note="EXP-GENERAL-GUIDE"、notes_policy="local-over-baseline-v1"、notes_write_scope="local_only"；缺标记先重载并重新核验，不向旧服务写入。跨构筑规则更新主攻略，特定技巧保持对应主题简短，无新认识不强行创建逐局流水账。
 
 每类最多200笔记、每条100修订、每次读20条；字段最多2000字符、结构12000 UTF-8字节、单文件65536字节、单次返回262144字节。sources最多20项，各1–5000的步骤最多50个。提交后日志失败返回write_state=UNKNOWN，按同write_id恢复，不能猜测未写入。固定安全错误不回显路径、任意输入或栈。
 

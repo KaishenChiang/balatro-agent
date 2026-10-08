@@ -13,6 +13,13 @@ from balatro_agent.recovery import RetirementResponse
 ROOT=Path(__file__).resolve().parents[1]
 LIFECYCLE={'launch_game','close_game'}
 TOOLS={'health','observe','wait_until_ready','act','action_status','read_notes','write_note','calculate','recover_lost_session'}|LIFECYCLE
+HEALTH_WRAPPER_METADATA = {
+    'unlock_input_protocol': 'native-overlay-v1',
+    'session_recovery_protocol': 'lost-session-v1',
+    'primary_experience_note': 'EXP-GENERAL-GUIDE',
+    'notes_policy': 'local-over-baseline-v1',
+    'notes_write_scope': 'local_only',
+}
 
 
 def host_error(row):
@@ -38,8 +45,7 @@ def comparison_value(tool, value):
     # separately rather than claiming they were present in the old journal.
     if tool=='health':
         value=dict(value)
-        for key,expected in {'unlock_input_protocol':'native-overlay-v1',
-                             'session_recovery_protocol':'lost-session-v1'}.items():
+        for key,expected in HEALTH_WRAPPER_METADATA.items():
             if key in value:
                 assert value.pop(key)==expected
     return canonical(json_numeric_value(value))
@@ -126,7 +132,7 @@ def main():
         item={'evidence_line':line,'tool':tool,'delivery':available[match][0]}
         if tool=='health':
             item['fixed_wrapper_metadata_checked_separately']={k:row['result'][k] for k in
-                ('unlock_input_protocol','session_recovery_protocol') if k in row['result']}
+                HEALTH_WRAPPER_METADATA if k in row['result']}
         if tool in ('act','write_note'):
             request=json.loads(canonical(row['parameters']))
             if tool=='act':

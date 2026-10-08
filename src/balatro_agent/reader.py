@@ -93,6 +93,11 @@ class Reader:
             handle.write(canonical(row) + "\n")
 
     def _deliver(self, tool: str, result: dict) -> dict:
+        if "observation" in result:
+            # Service wall clock is outside the public game state and its ID.
+            # It enables per-run reporting without another game data source.
+            sampled = datetime.now(timezone.utc)
+            result = {**result, "server_time": {"utc": sampled.isoformat(), "unix_s": sampled.timestamp()}}
         try:
             self._record_delivered(tool, result)
         except OSError:

@@ -1,8 +1,8 @@
 {
   "evidence_type": "current_source_checks_not_live_game_acceptance",
-  "version": "0.6.5",
+  "version": "1.0.0",
   "synthetic": {
-    "tests": 772,
+    "tests": 823,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -18,6 +18,10 @@
   "published": false,
   "source_snapshot": [
     {
+      "path": ".gitattributes",
+      "sha256": "f4943e3a3cbdb7821bc291b9f69f14a4ce2f3cc8ba6b66af42b319e965901d1e"
+    },
+    {
       "path": ".gitignore",
       "sha256": "e04eb941893b362a708a6e126bbbfc49592385f1c9d9f3cfc97c3bea3e193fd6"
     },
@@ -27,19 +31,19 @@
     },
     {
       "path": "AGENTS.md",
-      "sha256": "e522491aea6d13f98dc08926ae0a8164ebf812314651856e5692fac1ae1cdc83"
-    },
-    {
-      "path": "Balatro Agent.cmd",
-      "sha256": "6dbcb145589224293f15ccdab31201be011bb29c2b1606af0175777f6dfe75fd"
+      "sha256": "2b30e867a044b05c03e6cc411b10285cec40e6ad536bdca7bc64e7978acfe9d8"
     },
     {
       "path": "Balatro Agent.exe",
-      "sha256": "1a1aaff194d866849c37aef8e1125d8efb9faa1c3e61e6221bf73a5c0d84ea9c"
+      "sha256": "a86013477955dd9141df867a26670ef8a450ab84bf2af252f41c64d8d58d5b36"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "06150bae9351df2b7901de5ae3258a20493a26d2d8ce02ac8288e7ec68a42a95"
     },
     {
       "path": "config/dependencies.lock.json",
-      "sha256": "45b09b466254cef6d8619699002ecea32241aff1cf63f454b3bd593f4c8ef727"
+      "sha256": "b8d34fc7cfa3286ec8b3f33ec846a6dd5c9c239a41bf30a2d5dbdeeecd92f847"
     },
     {
       "path": "config/game-lifecycle.example.json",
@@ -51,7 +55,7 @@
     },
     {
       "path": "config/runtime.lock.json",
-      "sha256": "254e5109c06f8711b8b54552c9a02752a3346eacae1f6eaebd397dbec059c745"
+      "sha256": "a5b355d44ee704fc140538d2b236eccfb42352701305b693862897f642cce91a"
     },
     {
       "path": "config/startup-ui.example.json",
@@ -67,11 +71,11 @@
     },
     {
       "path": "docs/balatro-ai/maintenance.md",
-      "sha256": "5a3330dffbf475c6038b6ec7c27455acf35d242b146c3933ef682012794ee679"
+      "sha256": "d0a9cd6f26a3f0c6c2a2897e09253ad9e71d2ecf3c9fe348c27212c607f6d8df"
     },
     {
       "path": "docs/balatro-ai/model-client.md",
-      "sha256": "a3d55269d03da91848dcc1a7245c742711be7974f501f80f7388d0a2abf9d909"
+      "sha256": "2695828ccc60e5adab12e1ae16a3b3247f4ac78cc7ba16200edc4fe004f7d600"
     },
     {
       "path": "docs/balatro-ai/notes-schema.json",
@@ -83,7 +87,7 @@
     },
     {
       "path": "docs/balatro-ai/reference.md",
-      "sha256": "c1e1255f475f02bf58efdd446504793599415bce97f40ef6da93b5a34137cd92"
+      "sha256": "8788819d409756a20d9ee29246ecd83518998ba402feb288ffac8052ab1e8dee"
     },
     {
       "path": "evidence/historical-runs.zip",
@@ -95,11 +99,11 @@
     },
     {
       "path": "evidence/README.md",
-      "sha256": "39eb9ccfb21c7bda90951f502f2ef02d962525d9b8d919b03bdc28ee7e1d8b4d"
+      "sha256": "fc79b79be665e76756e6b00e6ce739a328487fea4ff96bc761b25f844aee442a"
     },
     {
       "path": "experience/experience/EXP-CONDITIONAL-ENGINE/HEAD.json",
-      "sha256": "ba600ad59cd7a0782ffbf579889c8b2d0cbf39db9ccfd1d49399bc0041c88cad"
+      "sha256": "832244a18eea08af08a0827a83490bc3fe36da6c6a7fccbf4d621288210beee0"
     },
     {
       "path": "experience/experience/EXP-CONDITIONAL-ENGINE/r0001.md",
@@ -134,8 +138,12 @@
       "sha256": "146285719c8a12c738c7c2690b6868595d19aa8e66f7e73fe62ae4d244bd0cec"
     },
     {
+      "path": "experience/experience/EXP-CONDITIONAL-ENGINE/r0009.md",
+      "sha256": "ef5ad795a75e85c9d4c5e6e88773147e25ec6bd0dd79b1ec144459e610d16270"
+    },
+    {
       "path": "experience/experience/EXP-CONDITIONAL-HANDS/HEAD.json",
-      "sha256": "79e40741cfa2f7dfb44f9ba134d8e88a39f29f999b9fae5430752a271b514e9d"
+      "sha256": "93a39102fad05c960e95571d465bdc4d91ed45294db3da196c2901783e2c92f5"
     },
     {
       "path": "experience/experience/EXP-CONDITIONAL-HANDS/r0001.md",
@@ -154,8 +162,12 @@
       "sha256": "1355fb04369b8269da73f4953c31115588e5e39c859416bcd622359bf329d04a"
     },
     {
+      "path": "experience/experience/EXP-CONDITIONAL-HANDS/r0005.md",
+      "sha256": "1da9d37cb43e1016a0fe50d5174f48921a05d7c25d3a80a515864bfabe8324cb"
+    },
+    {
       "path": "experience/experience/EXP-FIRST-CARD-ENGINE/HEAD.json",
-      "sha256": "4b6449f45d4a623cab7d34c3d55dc76d9c3ab13a720bbf6331c497343e15b6d0"
+      "sha256": "372672585d4adc4ecff426a5ab98625e461c429264a7da5c17a829c1c8447f75"
     },
     {
       "path": "experience/experience/EXP-FIRST-CARD-ENGINE/r0001.md",
@@ -166,8 +178,12 @@
       "sha256": "d9c9c58ee21adef2c69294c454162b55856a8d1c25f2f1659d270e10ec105c96"
     },
     {
+      "path": "experience/experience/EXP-FIRST-CARD-ENGINE/r0003.md",
+      "sha256": "491cda70b62fae73dfd2551250afd02cffeb2035d88ccd38d63a23fa58d7f1da"
+    },
+    {
       "path": "experience/experience/EXP-FLUSH-SUPPORT/HEAD.json",
-      "sha256": "5cb428aa0f564966aae3e010c3a55279a00ef7b91cc8f43f5f08dbfe5b4526a2"
+      "sha256": "a0aac9a574385333a6dd20c81ec621f7b7047f3b7e938afe30b27635fffa7e62"
     },
     {
       "path": "experience/experience/EXP-FLUSH-SUPPORT/r0001.md",
@@ -190,8 +206,28 @@
       "sha256": "7f045bfa557e684cbe2a5bc07c20a3e8204172258aa353458d816173f15371c8"
     },
     {
+      "path": "experience/experience/EXP-FLUSH-SUPPORT/r0006.md",
+      "sha256": "97837c61cad2e9e205e03e39a6e8a4a10ebc31f8bbf3bf66969841bb6cb094c9"
+    },
+    {
+      "path": "experience/experience/EXP-FLUSH-SUPPORT/r0007.md",
+      "sha256": "2d7aa279ed6e21799521b572e680570f6ced2f768c3e572fafa976563d80b519"
+    },
+    {
+      "path": "experience/experience/EXP-GENERAL-GUIDE/HEAD.json",
+      "sha256": "9943d5b1b3d193dd8f331310f16e2a92be80578b4d27596158839daa8bc9a96d"
+    },
+    {
+      "path": "experience/experience/EXP-GENERAL-GUIDE/r0001.md",
+      "sha256": "9d09758fa9cbc7bd8f52c87fc8b0a56bcce472fc7938a580836dd6963e1d0df6"
+    },
+    {
+      "path": "experience/experience/EXP-GENERAL-GUIDE/r0002.md",
+      "sha256": "978b6a606358cbf66a81e7f33ae18b7e2ffb08cbe3ecc3fe46e10c00fb75587c"
+    },
+    {
       "path": "experience/experience/EXP-MONEY-SCORING/HEAD.json",
-      "sha256": "8fbc1ac7db04c4ddeec2b119e9f3f5f49fd47d1655f754e78f0f497fff39757a"
+      "sha256": "4d489c187c91fabb211cbee32f8a68951c7046682b846b718dea5c8572929bbf"
     },
     {
       "path": "experience/experience/EXP-MONEY-SCORING/r0001.md",
@@ -210,16 +246,28 @@
       "sha256": "0f09bea23da4aaed00e812b4267dc35366ddadba25df8aa5a66f956cfe380985"
     },
     {
+      "path": "experience/experience/EXP-MONEY-SCORING/r0005.md",
+      "sha256": "7833c8ca502a7692c28b80d7800170e52ce734e8c4c23874d6625b47ed76e0b7"
+    },
+    {
+      "path": "experience/experience/EXP-MONEY-SCORING/r0006.md",
+      "sha256": "677741648e8b4c664fb5a22759e0070f2449b2316423b6218a5e4d4fcba34705"
+    },
+    {
       "path": "experience/experience/EXP-PLANET-RESERVE/HEAD.json",
-      "sha256": "935af58da7893f1b3694b7e0a4686e92579382d04d13f04b863335c44309b0c9"
+      "sha256": "2ce16f29316bfb3af9dc7b9f3f5cdff2d8a24e8dddb925fd632846b461a93616"
     },
     {
       "path": "experience/experience/EXP-PLANET-RESERVE/r0001.md",
       "sha256": "49580766dcf93ffea3187f026aebe56ae18d0ee370f0a75f1b5b70db7ae724c2"
     },
     {
+      "path": "experience/experience/EXP-PLANET-RESERVE/r0002.md",
+      "sha256": "257c85d2e33a2849cadff4437b2bec9d3e66446f97fb4e13e657eba75d2d0d68"
+    },
+    {
       "path": "experience/experience/EXP-PUBLIC-STATE-AFTER-DRAW/HEAD.json",
-      "sha256": "a09183ef848b2c36919405cb31d35b82610a714434256d541be09e12f93d29b5"
+      "sha256": "656c038e7463683c6e2603a268a49a1f863da7c85ed46b2b4d837924978685e1"
     },
     {
       "path": "experience/experience/EXP-PUBLIC-STATE-AFTER-DRAW/r0001.md",
@@ -238,8 +286,12 @@
       "sha256": "9c267711c9849401ca3f2b8fbc4eb5e067c6490e28f78e196e6a54d7539b50c8"
     },
     {
+      "path": "experience/experience/EXP-PUBLIC-STATE-AFTER-DRAW/r0005.md",
+      "sha256": "b3ef5a94e388f7832b6bf6a59e5d8dae34600304e3bfcfc5d074b52034fe780c"
+    },
+    {
       "path": "experience/experience/EXP-RED-STAKE-ECON/HEAD.json",
-      "sha256": "b89fe8a8fb0769f881e2819a0a0572d2a65937c77aa86e9e4ce33881fbf4b0af"
+      "sha256": "9c17907a4bde018e588e02f78a048f78d9fb6d75f78a66fe7b4965ace88cfc3c"
     },
     {
       "path": "experience/experience/EXP-RED-STAKE-ECON/r0001.md",
@@ -250,8 +302,12 @@
       "sha256": "0de09ebc0dab87ef297a6c6e692067a92e873f76cbcad417d0a13d8e23927d5e"
     },
     {
+      "path": "experience/experience/EXP-RED-STAKE-ECON/r0003.md",
+      "sha256": "101c445704a7b584b049c14613c1c8a52199272cb21bddbbcd437f87d24ac054"
+    },
+    {
       "path": "experience/experience/EXP-REPEATED-HAND/HEAD.json",
-      "sha256": "7d014b7218a6163dc7bba19a5f8eef5000997a3ec2b0674f987931445288d7cf"
+      "sha256": "b8f1ca74fd6e75c7643ab06615be1c61449f952d92ef170771d906a2855faeb6"
     },
     {
       "path": "experience/experience/EXP-REPEATED-HAND/r0001.md",
@@ -270,8 +326,12 @@
       "sha256": "a4c85c69c5f9c5c44c13eff6bcb914dc46c5d147522c8823c777447b726324ca"
     },
     {
+      "path": "experience/experience/EXP-REPEATED-HAND/r0005.md",
+      "sha256": "2fbca2a99548d5ad10e7ce18d3d58ca261ef44e76f7dff89ad09740cadbdf536"
+    },
+    {
       "path": "experience/experience/EXP-SCORE-THRESHOLD/HEAD.json",
-      "sha256": "af1fbab6d56c39f850896a7189f95cd8a7d0ea4fa37616bc6a5b92496a124787"
+      "sha256": "adf234d68ad6a924bb271eb87e6ca7d097b1bc18b1f103116fff5e0014bc513b"
     },
     {
       "path": "experience/experience/EXP-SCORE-THRESHOLD/r0001.md",
@@ -290,20 +350,24 @@
       "sha256": "b7db559ab423f3caa32b96da02c690b8a06c0752fda0b3f966b55f29393a79b6"
     },
     {
+      "path": "experience/experience/EXP-SCORE-THRESHOLD/r0005.md",
+      "sha256": "b41d64fc1f12822a9cd767c3ea378a30732028386a225d3727a0bcc2829c46a9"
+    },
+    {
       "path": "experience/experience/EXP-SHUFFLED-JOKERS/HEAD.json",
-      "sha256": "a94d8b64fcde369886a381f5377a8fcb12f73a059c3fdc225d172d43dc30cfb5"
+      "sha256": "8637da654bfb99615b509aa10fbf483055165f0243937de815a2273b9126782b"
     },
     {
       "path": "experience/experience/EXP-SHUFFLED-JOKERS/r0001.md",
       "sha256": "1ea7c3788d0d294eafa711916ac8a03fb8ee295ce6e35a78d324b6e3c5139001"
     },
     {
-      "path": "experience/README.md",
-      "sha256": "a366f76ea413dcf80bac909640220e2adc46dfe30d72417667e774f8285162c6"
+      "path": "experience/experience/EXP-SHUFFLED-JOKERS/r0002.md",
+      "sha256": "521dd9a32b41369bd13cf26ebf91ae3467a4a4a03c0346af461af191e7191046"
     },
     {
-      "path": "Install.cmd",
-      "sha256": "6e9e35cd59613d06ed64bf405042e9d839e14e971a39ed130d7e34b5492a8815"
+      "path": "experience/README.md",
+      "sha256": "bb134c9cbea6eec887d7b452d0c30b05aab3c9e4ae950e9b44b18870a0978c54"
     },
     {
       "path": "LICENSE",
@@ -359,15 +423,15 @@
     },
     {
       "path": "PROJECT.md",
-      "sha256": "e992fe6f567b0fe6e7fe9e06ba2f199e286f7ffc2fc0ff4948573ed96e2f6c19"
+      "sha256": "de019456f84c9c377cdbbdeb6edb5e88e91b7f39cadb26cdab02797f967b28e8"
     },
     {
       "path": "prompts/bootstrap.md",
-      "sha256": "061ee9c060c83e30be83492a6cabc1e4966c4c42512ad6756e442dfd4b85993f"
+      "sha256": "ed5145d33a703ce29c7f5880933cf4fce8335bc3a81e6d5efb45597b63d7d237"
     },
     {
       "path": "prompts/first-use.md",
-      "sha256": "11c64fc8a2c9162b3354ea05942bedda64780123c7fc4a1642162593ed4b68f2"
+      "sha256": "1578c3445b232ab9471bfca30ad6298ad5811c78d0a17b3f1b919614de28cf9a"
     },
     {
       "path": "prompts/mcp-evidence.js",
@@ -375,11 +439,11 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "75b761a4d2cc0f8e5b8bc332a53c31ae56bbb4b62a0365fa1c9f0691b836eec8"
+      "sha256": "0993a10db0da24c7327e3f9612a4f60c4c53fce0ca9f814b5e79d06835d15680"
     },
     {
       "path": "README.md",
-      "sha256": "4d19bea0154b1c1ae8e4c8585e323b71dd8b1826f7ec189567c5e63e910bc0b7"
+      "sha256": "8e489c6bd7240313e270496d66f0a8f95453aa9ba466d980cbb5a3260a4d0888"
     },
     {
       "path": "scripts/analyze_timings.py",
@@ -387,7 +451,7 @@
     },
     {
       "path": "scripts/audit_experience_mcp_evidence.py",
-      "sha256": "5ced01397f02fd1e88abd580703c00e2ad76895ef8c988d80ee0dbdc4f67732c"
+      "sha256": "75f2c0cbfcd5b990e9a9b6175a1c08aa493f5f3a3170608041d9a6431f4c5ab1"
     },
     {
       "path": "scripts/bootstrap_sources.py",
@@ -403,11 +467,15 @@
     },
     {
       "path": "scripts/check_notes_persistence.py",
-      "sha256": "f6e13852cd64543533fffef63e67b12f59c68f740f76646a98d19f210dc9c21d"
+      "sha256": "cbe1a10ed669d867273eff0226329c36c1a6cd4361c42f0fd8cb5e5f0afc8c7f"
     },
     {
       "path": "scripts/client_evidence.py",
       "sha256": "58a51d016d320f0fa491915c1ce84dfdf3fb5e649868b1d940c4bd190a14b6de"
+    },
+    {
+      "path": "scripts/codex_handoff.ps1",
+      "sha256": "4338c77430cef9568cf1c457c8ab61c6d1b13395997515434d62d4693c9d8f15"
     },
     {
       "path": "scripts/export_contract.py",
@@ -419,19 +487,19 @@
     },
     {
       "path": "scripts/launcher.ps1",
-      "sha256": "2ea00e9fb88e4a110c92b1066273f1c4722a3cfee553311aa25169154a497d16"
+      "sha256": "9c72c56e9959f33af2675816b5b5c7ab866f4bf6a6590244960c88a29358ec1e"
     },
     {
       "path": "scripts/onboarding.py",
-      "sha256": "9d8e97c96699d7a297fb4139b4eb77e7e7152fc59a951cd44f07ed22db49dc32"
+      "sha256": "7b557556d7de9b2f4ac10d82905321134f7ec6cd4ba2487b712e3a98c479ed8b"
     },
     {
       "path": "scripts/package_source.py",
-      "sha256": "9227e7711c1fb8b6493dbfc2fe1854e7c6f188e682a55349d50d35366b52e8c6"
+      "sha256": "0eddba196e1c8c0722590e9b73ac4de11a1746326ecc589d1c1b8f55d2e9e812"
     },
     {
       "path": "scripts/project.py",
-      "sha256": "6e65b212045597f18c05901b58005afba384664c43a80f8f39d9c3d3194d54cd"
+      "sha256": "73c21a58d70a365eec44355cfe59caaa608cd5383a959b8e768581b55899a718"
     },
     {
       "path": "scripts/setup.ps1",
@@ -443,7 +511,7 @@
     },
     {
       "path": "scripts/stdio_smoke.py",
-      "sha256": "4831bb2f18d00a259c9233ced1eb3a9d46ee7c8e079093d554306030c05c713f"
+      "sha256": "23a18257a60f7514938ac007a1cf7e0fb70a692ffa4fd13008ef513a18df355e"
     },
     {
       "path": "scripts/update_mod.py",
@@ -455,7 +523,7 @@
     },
     {
       "path": "scripts/verify_source_candidate.py",
-      "sha256": "b0894f714d20b3369413de636cc4d7eb20515109a62f9055e104e613edf74a9f"
+      "sha256": "063299a50e07dc7fc77c9596c53c5e0d529b42052f42067b56da27d925baa796"
     },
     {
       "path": "src/balatro_agent/__init__.py",
@@ -487,7 +555,7 @@
     },
     {
       "path": "src/balatro_agent/notes.py",
-      "sha256": "c9cf9fd5b43125545a20f6d2899c564444962edd63bd54ad632d2694cc9c2421"
+      "sha256": "55fbb04e059ff6fa786153e70f9717b47047b8848171b36d85b472f976cd83c6"
     },
     {
       "path": "src/balatro_agent/policy.py",
@@ -495,7 +563,7 @@
     },
     {
       "path": "src/balatro_agent/reader.py",
-      "sha256": "5be7b26edb8afc3ab7adcc89707b4c7f94e380a00b793f03d8ba9a70a0150903"
+      "sha256": "9237dfa40aabdeda2349ab7402411203a76ddaf5e82e73ca171939b86d108a9a"
     },
     {
       "path": "src/balatro_agent/recovery.py",
@@ -503,11 +571,11 @@
     },
     {
       "path": "src/balatro_agent/server.py",
-      "sha256": "521f110b6d9e91bf4ba6861f18bdb71ce19ffb802fb0e507c20f30739fcf62fa"
+      "sha256": "36b269a87ee4bd060fcc5f84f63dececcdf7b7c67b647123cb9117ba25f7b5dd"
     },
     {
       "path": "src/balatro_agent/settings.py",
-      "sha256": "266f8fb5d347bb2292430fcd104a57550c21ceb3ac3c31ee552e4b567cc62d14"
+      "sha256": "8b8fdc8c7b7ae7b5bdc52aa58fdd0ee2743cdc8b1ad3a79b5fea37a5e466901f"
     },
     {
       "path": "src/balatro_agent/transport.py",
@@ -519,7 +587,7 @@
     },
     {
       "path": "tests/conftest.py",
-      "sha256": "ef0f2f2a54e233ac8b2b2cb62e62358ccd8b88dc3731c8e53adaaf0f9008f014"
+      "sha256": "33c7219483a993b8c83c077376c81272d4437460e0228cb432be5c25479790f1"
     },
     {
       "path": "tests/support/json.lua",
@@ -546,6 +614,10 @@
       "sha256": "4bbe702495f9afbd96fbc0f6a332daeb85c3ac519a75b8db39d4c377bd01d52a"
     },
     {
+      "path": "tests/test_codex_handoff.py",
+      "sha256": "45a91df2778972b355df78e66586ee1cdcdd6453105ea49bca60b057daffdf40"
+    },
+    {
       "path": "tests/test_desktop.py",
       "sha256": "94219489067b705012ac5c26091852f8df7153c1c40a6c009c7cc0ed6adbdf1a"
     },
@@ -555,11 +627,15 @@
     },
     {
       "path": "tests/test_evidence_delivery.py",
-      "sha256": "4c141298b77f64fb9eda396738eb7df38fc9a4114fd58ea907f5c6fcf1f50d97"
+      "sha256": "e6a8e7b64f34b8af87e965a48a29fd0a817f1c0813a0e5530ac616f122a4dcc2"
     },
     {
       "path": "tests/test_executor.py",
       "sha256": "c6570b40d355f1ece9a01cf07948ac68d07fa08abfaf5425f981faf34e2b79ea"
+    },
+    {
+      "path": "tests/test_experience_baseline.py",
+      "sha256": "fa638cbf0187ae0ec7a66ecc39d321518db9b87d0ca743fceed8308e1d014c34"
     },
     {
       "path": "tests/test_lifecycle.py",
@@ -587,15 +663,19 @@
     },
     {
       "path": "tests/test_onboarding.py",
-      "sha256": "2c66256b9cdf30fa8709a376a03b727ffa34cbd668bc4efc2046d9816831c291"
+      "sha256": "24ffd1f981d5642d758384695db830e0dcf69820dff5371df5fc31142a239e05"
     },
     {
       "path": "tests/test_progression.py",
-      "sha256": "f7f2fc570217b64c3abd1216f35415f92c96340af10baa08b828e683fe1e61d9"
+      "sha256": "02aff04205afa3cef98da09f750ba806a15f98ceef790b1f71bccce93d87c565"
     },
     {
       "path": "tests/test_reader.py",
-      "sha256": "58ccb85f8504ae6f948ea70134a6d8ac608d8083570725bf135304bf4a8d82d0"
+      "sha256": "96c8ca66c24e72acf3898c386c50f9c912580b115ff4aeaa0041a9c0069e0ab6"
+    },
+    {
+      "path": "tests/test_release_maintenance.py",
+      "sha256": "ac15f78da0c9c14b048624166951bdb7daf7d72e48698011138e9b96cf74db5a"
     },
     {
       "path": "tests/test_session_recovery.py",
@@ -603,7 +683,7 @@
     },
     {
       "path": "tests/test_setup.py",
-      "sha256": "a9500a22b31331c5c56f53c23e77e064dd174c7ca9e28379a1ae2613bd9ebf77"
+      "sha256": "056129ecad10ff877a9324099c39e3aff8b73c00028f55d2f95277f7b5518f08"
     },
     {
       "path": "tests/test_source_delivery.py",
@@ -659,7 +739,7 @@
     },
     {
       "path": "uv.lock",
-      "sha256": "e5f5abee770c66db82bc3fa3caf3857baf5416c2d40fb590d6a3acb3bbec852d"
+      "sha256": "0ee96628544ca46db217bcb2a2cd5519728820d1fb68332171ccfeb3970df71f"
     },
     {
       "path": "vendor/balatrobot-9052d76.zip",
@@ -687,15 +767,15 @@
     },
     {
       "path": "windows/app.manifest",
-      "sha256": "806982db99adc6334aa5687668cd1c3576d6fab2600a3709ea82c83d1ec14a62"
+      "sha256": "6f047779b3ecd7bb6ed8cee59bc1528a4d39a007a3413b6da85f348bd3e955e5"
     },
     {
       "path": "windows/launcher-build.json",
-      "sha256": "d3bd105fec82b6ff577e0e4e3dbe598f7509a9ff0abd5d24cd0ab1d6d42fb856"
+      "sha256": "baa828d574dd9ac097cafb2e9c462d3a9c6051b96df754fbd42a9c0f5fbbf3ef"
     },
     {
       "path": "windows/Launcher.cs",
-      "sha256": "e9c9208cf05b5043f7ddff1fb46e9ec15491be752ded39c053886826c8a9ae4b"
+      "sha256": "2cf398556c7c8e6de975e6b945ad893ca1228346cd1b31a6d9e94c4be6fc797d"
     }
   ],
   "scope": "Local checks include private native-function fixtures; public checkout skips those when absent. Actual new-machine cold installation, client reload, other clients and model rankings remain unverified."

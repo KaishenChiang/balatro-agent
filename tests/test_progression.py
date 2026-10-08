@@ -315,6 +315,33 @@ def test_unlocked_native_nondefault_start_allowed(game, deck, stake, save, allow
         assert result['state'] == 'REJECTED' and result['reason'] == 'wrong_phase'
 
 
+@pytest.mark.parametrize('case,allowed', [('normal_loss',True),('unknown_cached_run',False),('unfinished_run',False)])
+def test_climb_new_attempt_after_loss_preserves_unfinished_and_unknown_runs(game,case,allowed):
+    lua,call,_=game
+    setup_scene(game,'stake')
+    lua.execute('''
+      G.STAGE=G.STAGES.RUN; G.STATE=G.STATES.GAME_OVER; G.GAME.won=false
+      TEST_START_COUNT=0
+      local b=ui({button='run_select_start_run'}); b.click=UIElement.click; b.created_on_pause=true
+      G.OVERLAY_MENU.UIRoot.children[#G.OVERLAY_MENU.UIRoot.children+1]=b
+      G.FUNCS.run_select_start_run=function() TEST_START_COUNT=TEST_START_COUNT+1 end
+      local snapshot=BA_READER.snapshot
+      BA_READER.snapshot=function(...)
+        local s=snapshot(...); s.public.setup.availability='observed'
+        s.public.setup.deck_name=localize{type='name_text',set='Back',key='b_red'}
+        s.public.setup.stake_name=localize{type='name_text',set='Stake',key='stake_white'}; return s
+      end
+    ''')
+    if case=='unknown_cached_run':
+        lua.execute('G.SAVED_GAME={GAME={}}')
+    elif case=='unfinished_run':
+        lua.execute('G.STATE=G.STATES.SELECTING_HAND; G.SAVED_GAME={GAME={won=false}}')
+    result=call('act_submit',request(game,'start_run',{},'climb-loss-start'))
+    assert result['submitted'] is allowed and lua.eval('TEST_START_COUNT')==int(allowed)
+    if not allowed:
+        assert result['state']=='REJECTED'
+
+
 @pytest.mark.parametrize('direction,initial,expected', [('next_game_speed', 3, 4), ('previous_game_speed', 2, 0.5)])
 def test_speed_uses_actual_native_cycle_and_confirmed_rendered_value(game, direction, initial, expected):
     lua, call, tick = game

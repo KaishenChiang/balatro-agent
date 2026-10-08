@@ -67,6 +67,27 @@ async def test_unknown_actual_profile_is_not_replaced_by_test_configuration(sett
         assert result['status']=='unknown_profile' and 'observation' not in result
 
 
+async def test_server_wall_clock_is_delivered_without_changing_public_state(settings,public_envelope,monkeypatch):
+    from datetime import datetime, timezone
+    from balatro_agent import reader as reader_module
+    public_envelope['server_time'] = {'unix_s': 'SECRET_NATIVE_CLOCK'}
+    reader=Reader(settings,client_for(settings,lambda req:reply(req,public_envelope)))
+    moments=iter([datetime(2026,10,8,0,0,0,tzinfo=timezone.utc),
+                  datetime(2026,10,8,0,2,3,tzinfo=timezone.utc)])
+    class SampleClock:
+        @staticmethod
+        def now(tz): return next(moments)
+    monkeypatch.setattr(reader_module,'datetime',SampleClock)
+    monkeypatch.setattr(reader,'_record_delivered',lambda *args: None)
+    first=await reader.observe()
+    second=await reader.observe()
+    assert first['observation']==second['observation']
+    assert second['server_time']['unix_s']-first['server_time']['unix_s']==123
+    assert first['server_time']['utc']=='2026-10-08T00:00:00+00:00'
+    assert 'server_time' not in first['observation']
+    assert 'SECRET' not in canonical(first) and 'SECRET' not in canonical(second)
+
+
 async def test_missing_actual_profile_is_explicitly_unknown(settings,public_envelope):
     public_envelope.pop('profile')
     reader=Reader(settings,client_for(settings,lambda req:reply(req,public_envelope)))
@@ -188,7 +209,13 @@ def test_no_external_host_or_endpoint_forwarding(url):
     with pytest.raises(ValueError): GameClient(url,1)
 
 
-async def test_malformed_hidden_identity_cannot_cause_error_side_channel(settings,public_envelope):
+async def test_malformed_hidden_identity_cannot_cause_error_side_channel(settings,public_envelope,monkeypatch):
+    from datetime import datetime, timezone
+    from balatro_agent import reader as reader_module
+    class FixedClock:
+        @staticmethod
+        def now(tz): return datetime(2026,10,8,tzinfo=timezone.utc)
+    monkeypatch.setattr(reader_module,'datetime',FixedClock)
     card=public_envelope['public']['regions'][0]['cards'][0]
     card['visibility']='face_down'
     reader=Reader(settings,client_for(settings,lambda req:reply(req,public_envelope)))

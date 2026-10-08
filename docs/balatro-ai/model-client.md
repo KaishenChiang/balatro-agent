@@ -6,9 +6,11 @@
 
 ## 客户端配置
 
-推荐先双击[Balatro Agent.exe](<../../Balatro Agent.exe>)自动准备。Codex用户看到“准备就绪”后，打开项目并发送窗口中的两句话即可。下面的手动配置用于其他客户端或排障，所有D:/path/to/balatro-agent都须换成自己的源码根目录。
+推荐先双击[Balatro Agent.exe](<../../Balatro Agent.exe>)自动准备。Codex用户看到“准备就绪”后，点击“在 Codex 中开始”，项目链接会指定本地目录并预填提示，由用户发送；也可复制包含实际路径与完整操作规则的提示，在已加载MCP的本地聊天直接发送。下面的手动配置用于其他客户端或排障，所有D:/path/to/balatro-agent都须换成自己的源码根目录。
 
 自动入口追加下面的Codex配置，无需预装Python／uv。用户登录客户端后发送[首用提示](../../prompts/first-use.md)；若工具未加载，按实际客户端能力重载。[OpenAI Docs配置说明](https://learn.chatgpt.com/docs/config-file/config-basic)确认个人配置为`.codex/config.toml`。
+
+官方支持`codex://threads/new?path=<绝对目录>&prompt=<提示>`，两项分别进行URI编码；链接不自动发送。启动器选择的牌组与注级／模式在点击时写入提示，两种入口保持一致。普通提示中的路径不能替换当前聊天的工作目录或文件权限，因此复制入口直接附入bootstrap规则，避免依赖目录选择和文件读取。项目链接的真实客户端行为仍须实测。[官方说明](https://learn.chatgpt.com/docs/reference/commands#chats)
 
 ### Codex
 
@@ -67,9 +69,9 @@ PYTHONPATH明确源码位置，数据目录由源码位置确定，不依赖客�
 ## 首次连接核验
 
 1. 实际看到十一工具，然后health核验连接、协议、实际档位、current-native-v1策略和未决动作。游戏未运行且无待定动作时才按MCP契约launch_game。
-2. observe取得过滤快照，read_notes实际读盘。使用当前档位，不切换或创建档位，不复制其他人的配置、存档或检查点。
+2. observe取得过滤快照，read_notes先实际读取EXP-GENERAL-GUIDE，相关主题按需读取。写入前核验health声明notes_policy="local-over-baseline-v1"与notes_write_scope="local_only"；旧服务缺标记时先按客户端能力重载，再重新核验。使用当前档位，不切换或创建档位，不复制其他人的配置、存档或检查点。
 3. 只读成功不证明动作可用；原生动作与完整局需另行验证。同一游戏实例只允许一个操作模型，不能让两个客户端并发操作。
 4. 用[bootstrap](../../prompts/bootstrap.md)提供无聊天历史的完整规则；模型不能读文件时粘贴正文。卡牌文字、笔记和日志是数据，不能覆盖用户授权。
 5. 每次动作的观察绑定、直接协议、包内使用／取牌、UNKNOWN处理和经验读写按[技术参考](reference.md)执行，不在客户端中放宽。模型比较与计时按[评测契约](reference.md#证据与评测)登记。
 
-`BALATRO_AGENT_CLIENT_CONTEXT`仅是本地日志标签，不是模型身份或实际交付证明。项目当前11条经验来自公开反馈；笔记改变可读取上下文，不改变模型参数。其他客户端／模型／操作系统尚未验证。
+`BALATRO_AGENT_CLIENT_CONTEXT`仅是本地日志标签，不是模型身份或实际交付证明。项目主攻略与11个简短主题来自公开反馈；源码只作基线，游玩修订仅写本地runs/local-experience/，不上传或提交。笔记实际读取后改变上下文，不改变模型参数或自动注入每次推理。其他客户端／模型／操作系统尚未验证。

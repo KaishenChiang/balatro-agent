@@ -25,6 +25,9 @@ def main():
     no_links(output)
     if output.exists():raise ValueError('Preserve existing validation and use a new output')
     version=tomllib.loads((ROOT/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
+    companion=ROOT/'deliverables/source'/('balatro-agent-'+version+'-source-validation.json')
+    no_links(companion)
+    if companion.exists():raise ValueError('Preserve existing source validation companion and its candidate')
     archive=ROOT/'deliverables/source'/('balatro-agent-'+version+'-source-candidate.zip')
     no_links(archive)
     target=ROOT/'.artifacts'/('source-validation-'+uuid.uuid4().hex)
@@ -78,9 +81,6 @@ def main():
     success=(len(results)==4 and all(i['exit_code']==0 for i in results) and match
              and totals['tests']>0 and totals['failures']==totals['errors']==0)
     if success:
-        companion=ROOT/'deliverables/source/source-validation.json'
-        no_links(companion)
-        if companion.exists():raise ValueError('Preserve existing source validation companion')
         with companion.open('x',encoding='utf-8') as stream:stream.write(json.dumps(scope,indent=2)+'\n')
     print(json.dumps(scope))
     if not success:raise ValueError('Independent source candidate rebuild did not pass; keep its report')

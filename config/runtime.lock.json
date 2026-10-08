@@ -3,7 +3,7 @@
   "platform": "windows-x86_64",
   "python_version": "3.13.11",
   "uv_version": "0.9.21",
-  "uv_lock_sha256": "e5f5abee770c66db82bc3fa3caf3857baf5416c2d40fb590d6a3acb3bbec852d",
+  "uv_lock_sha256": "0ee96628544ca46db217bcb2a2cd5519728820d1fb68332171ccfeb3970df71f",
   "archive": "runtime-windows-x64.zip",
   "sha256": "c3d68739241fce03a8821fa5632ef59e4012706017de297b6752af880906f072",
   "bytes": 37541819,

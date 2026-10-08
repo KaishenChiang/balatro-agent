@@ -14,7 +14,8 @@ class Settings:
     poll_interval_s: float = 0.2
     profile_file: Path = ROOT / "config/test-profile.local.json"
     log_dir: Path = ROOT / "runs/live"
-    notes_dir: Path = ROOT / "experience"
+    notes_dir: Path = ROOT / "runs/local-experience"
+    baseline_notes_dir: Path | None = ROOT / "experience"
     lifecycle_file: Path = ROOT / "config/game-lifecycle.local.json"
     client_context: str = "unspecified"
 
@@ -22,8 +23,9 @@ class Settings:
     def runtime(cls):
         # This label is bookkeeping, never proof of a Codex tool invocation.
         if os.environ.get("BALATRO_AGENT_CLIENT_CONTEXT") == "development":
-            return cls(log_dir=ROOT / "runs/checks/stdio-development", notes_dir=ROOT / "runs/checks/stdio-development/experience", client_context="development")
-        return cls(client_context="codex_config" if os.environ.get("BALATRO_AGENT_CLIENT_CONTEXT") == "codex_config" else "unspecified")
+            return cls(log_dir=ROOT / "runs/checks/stdio-development", notes_dir=ROOT / "runs/checks/stdio-development/experience", baseline_notes_dir=None, client_context="development")
+        return cls(notes_dir=ROOT / "runs/local-experience", baseline_notes_dir=ROOT / "experience",
+                   client_context="codex_config" if os.environ.get("BALATRO_AGENT_CLIENT_CONTEXT") == "codex_config" else "unspecified")
 
     def confirmed_profile(self) -> int | None:
         # Historical profile-2 receipts remain readable for maintenance only.

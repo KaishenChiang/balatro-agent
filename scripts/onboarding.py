@@ -359,7 +359,7 @@ def prepare(root, *, steam_dir=None, library_dir=None, mods=None, config=None,
         'prepared': True, 'reused_installation': reused, 'installed_files_verified': len(entries),
         'stdio_tools_verified': count, 'client_config': str(config),
         'client_connection_verified': False, 'game_started': False,
-        'next_step': 'Open this project in Codex and send prompts/first-use.md'}
+        'next_step': 'Use the launcher to open a Codex project chat with its prompt, or paste the complete path-aware play prompt into a local Codex chat'}
     target = root / '.artifacts/onboarding.local.json'
     no_links(target)
     target.parent.mkdir(parents=True, exist_ok=True)

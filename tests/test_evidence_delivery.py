@@ -60,12 +60,40 @@ def test_only_explicit_host_error_is_excluded_from_mcp_comparison():
 
 def test_health_wrapper_constants_do_not_mask_state_or_unknown_metadata():
     old={'status':'ok','profile':2,'ready':True}
-    newer={**old,'unlock_input_protocol':'native-overlay-v1'}
+    newer={**old,**audit.HEALTH_WRAPPER_METADATA}
     assert audit.comparison_value('health',old)==audit.comparison_value('health',newer)
     assert audit.comparison_value('health',old)!=audit.comparison_value('health',{**newer,'ready':False})
     assert audit.comparison_value('health',old)!=audit.comparison_value('health',{**newer,'unknown':'extra'})
-    with pytest.raises(AssertionError):
-        audit.comparison_value('health',{**old,'unlock_input_protocol':'unexpected'})
+    assert audit.comparison_value('health',old)!=audit.comparison_value('health',{**newer,'status':'disconnected'})
+    assert audit.comparison_value('health',old)!=audit.comparison_value('health',{**newer,'isError':True})
+    for key in audit.HEALTH_WRAPPER_METADATA:
+        with pytest.raises(AssertionError):
+            audit.comparison_value('health',{**newer,key:'unexpected'})
+
+
+def test_current_health_capabilities_are_audited_apart_from_reader_journal(tmp_path, monkeypatch):
+    journal_value = {'status': 'ok', 'profile': 2, 'ready': True}
+    delivered = {**journal_value, **audit.HEALTH_WRAPPER_METADATA}
+    evidence = tmp_path / 'runs/checks/codex-mcp-experience-health.jsonl'
+    evidence.parent.mkdir(parents=True)
+    evidence.write_text('\n'.join(json.dumps(row) for row in [
+        {'evidence_type': 'codex_actual_mcp_construction', 'synthetic_fixture': True},
+        {'tool': 'health', 'parameters': {}, 'result': delivered},
+    ]) + '\n', encoding='utf-8')
+    journal = tmp_path / 'runs/live/reader-synthetic-health.jsonl'
+    journal.parent.mkdir(parents=True)
+    journal.write_text(json.dumps({'tool': 'health', 'kind': 'delivered',
+        'client_context': 'codex_config', 'utc': '2026-10-08T00:00:00Z',
+        'value': journal_value}) + '\n', encoding='utf-8')
+    before = evidence.read_bytes()
+    monkeypatch.setattr(audit, 'ROOT', tmp_path)
+    monkeypatch.setattr('sys.argv', ['audit', '--evidence', str(evidence.relative_to(tmp_path)),
+        '--output', 'runs/checks/health-audit.json'])
+    assert audit.main() == 0
+    report = json.loads((tmp_path / 'runs/checks/health-audit.json').read_text(encoding='utf-8'))
+    assert report['comparison_passed']
+    assert report['matches'][0]['fixed_wrapper_metadata_checked_separately'] == audit.HEALTH_WRAPPER_METADATA
+    assert evidence.read_bytes() == before
 
 
 def test_json_number_spelling_does_not_lose_actual_delivery():

@@ -103,7 +103,8 @@ def test_new_setup_entrypoints_are_in_source_allowlist():
     try:
         import package_source
         files={p.relative_to(ROOT).as_posix() for p in package_source.selected_files(ROOT)}
-        assert {'Install.cmd','scripts/setup.ps1','prompts/first-use.md','tests/test_setup.py'}<=files
+        assert {'Balatro Agent.exe','scripts/setup.ps1','prompts/first-use.md','tests/test_setup.py'}<=files
+        assert not {'Balatro Agent.cmd','Install.cmd'} & files
         assert not any('.tools' in Path(p).parts or p.endswith('.local.toml') for p in files)
     finally:sys.path.remove(str(ROOT/'scripts'))
 
@@ -119,27 +120,3 @@ def test_one_click_rejects_conflicting_modes_before_bootstrapping(options,messag
         capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=30)
     assert result.returncode==1 and message in result.stderr
     assert '1/4' not in result.stdout
-
-
-@pytest.mark.parametrize('setup_exit',[0,19])
-@pytest.mark.parametrize('directory',['install with spaces & bang!','中文路径 with spaces & bang!'])
-def test_double_click_uses_its_own_directory_and_preserves_failure(tmp_path,setup_exit,directory):
-    if not PS:pytest.skip('Windows batch bootstrap')
-    # Exercise the actual CMD launcher; the fixture only records the request,
-    # never downloads files or touches a real game/client installation.
-    root=tmp_path/directory
-    scripts=root/'scripts';scripts.mkdir(parents=True)
-    entry=root/'Install.cmd';shutil.copyfile(ROOT/'Install.cmd',entry)
-    (scripts/'setup.ps1').write_text(
-        'param([switch]$Install)\n'
-        'if (-not $Install) { exit 71 }\n'
-        "[IO.File]::WriteAllText((Join-Path $PSScriptRoot '../called.txt'), $PSScriptRoot)\n"
-        f'exit {setup_exit}\n',encoding='ascii')
-    # CMD /S strips one surrounding quote pair. Use the raw, double-quoted
-    # command line so Python's argv quoting cannot expose the fixture's '&'.
-    command=f'"{os.environ["COMSPEC"]}" /d /v:off /s /c ""{entry}""'
-    result=subprocess.run(command,cwd=tmp_path,
-        input='\n',capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=30)
-    assert result.returncode==setup_exit,result.stdout+result.stderr
-    assert (root/'called.txt').read_text(encoding='utf-8')==str(scripts)
-    assert ('Setup completed.' if setup_exit==0 else 'Setup stopped.') in result.stdout

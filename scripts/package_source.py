@@ -11,9 +11,9 @@ import struct
 from bootstrap_sources import no_links, digest, unpack
 
 ROOT=Path(__file__).resolve().parents[1]
-TOP=['LICENSE','README.md','PROJECT.md','Install.cmd','Balatro Agent.cmd','Balatro Agent.exe','pyproject.toml','uv.lock',
-     '.gitignore','.python-version','AGENTS.md']
-SCRIPTS=['setup.ps1','launcher.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
+TOP=['LICENSE','README.md','PROJECT.md','CHANGELOG.md','Balatro Agent.exe','pyproject.toml','uv.lock',
+     '.gitattributes','.gitignore','.python-version','AGENTS.md']
+SCRIPTS=['setup.ps1','launcher.ps1','codex_handoff.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
          'install_portable.py','update_mod.py','package_source.py','verify_source_candidate.py','verify_offline.py',
          'stdio_smoke.py','export_contract.py','check_notes_persistence.py',
          'audit_experience_mcp_evidence.py','client_evidence.py','project.py','analyze_timings.py']
@@ -223,9 +223,11 @@ def verified_fault_recovery_run(root, summary_path):
     return summary
 
 
-def require_source_check(root, version):
+def require_source_check(root, version, check_report='runs/checks/release-check.json'):
     """Fresh source checks authorize a candidate, never a new live-game claim."""
-    path=root/'runs/checks/release-check.json'
+    path=(root/check_report).absolute()
+    if '..' in path.parts or not path.is_relative_to(root/'runs/checks'):
+        raise ValueError('Source check report belongs under runs/checks')
     if not path.is_file():
         raise ValueError('Current version has no registered complete delivery evidence; run project.py check --output runs/checks/release-check.json')
     no_links(path)
@@ -256,16 +258,19 @@ def candidate_bytes(path,root=ROOT):
 def main(argv=None):
     parser=argparse.ArgumentParser()
     parser.add_argument('--review-dir',default='deliverables/github-ready')
+    parser.add_argument('--check-report',default='runs/checks/release-check.json')
     args=parser.parse_args(argv)
     version=tomllib.loads((ROOT/'pyproject.toml').read_text(encoding='utf-8'))['project']['version']
-    report=require_source_check(ROOT,version)
+    report=require_source_check(ROOT,version,args.check_report)
     review=(ROOT/args.review_dir).absolute();no_links(review)
     if '..' in review.parts or not review.is_relative_to(ROOT/'deliverables'):
         raise ValueError('Review directory must stay inside deliverables')
     if review.exists():raise ValueError('github-ready already exists; preserve it and inspect before rebuilding')
     destination=ROOT/'deliverables/source';no_links(destination)
     archive=destination/('balatro-agent-'+version+'-source-candidate.zip');no_links(archive)
+    companion=destination/('balatro-agent-'+version+'-source-manifest.json');no_links(companion)
     if archive.exists():raise ValueError('Source candidate already exists; preserve it before rebuilding')
+    if companion.exists():raise ValueError('Source manifest already exists; preserve it before rebuilding')
     files=selected_files(ROOT,include_validation=False)
     history=json.loads((ROOT/'evidence/history.json').read_text(encoding='utf-8'))
     if digest(ROOT/'evidence/historical-runs.zip')!=history['archive_sha256']:
@@ -302,7 +307,8 @@ def main(argv=None):
             'fresh_source_rebuild_required':True}
         bundle.writestr('SOURCE-MANIFEST.json',json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     manifest['archive_sha256']=digest(archive)
-    (destination/'source-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    with companion.open('x',encoding='utf-8') as stream:
+        stream.write(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
     # Never overwrite an existing review directory or silently keep stale files.
     unpack(archive,review)
     print(json.dumps({'files':len(entries)+1,'archive':archive.relative_to(ROOT).as_posix(),

@@ -99,8 +99,12 @@ def render(row):
 
 
 class NotesStore:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, *, baseline_root: Path | None = None):
         self.root = root.absolute()
+        self.baseline = NotesStore(baseline_root) if baseline_root is not None else None
+        if self.baseline is not None and (self.root.is_relative_to(self.baseline.root)
+                                         or self.baseline.root.is_relative_to(self.root)):
+            raise ValueError('unsafe_path')
 
     def _identity(self, kind, note_id):
         if kind not in ('experience', 'TEST') or not isinstance(note_id, str) or not ID.fullmatch(note_id):
@@ -119,7 +123,7 @@ class NotesStore:
             raise NoteError('store_corrupt')
         return data
 
-    def _head(self, kind, note_id):
+    def _local_head(self, kind, note_id):
         folder = self._identity(kind, note_id)
         path = safe_path(self.root, kind, note_id, 'HEAD.json')
         if not path.exists():
@@ -134,7 +138,19 @@ class NotesStore:
             raise NoteError('store_corrupt') from None
         return row['revision']
 
+    def _head(self, kind, note_id):
+        current = self._local_head(kind, note_id)
+        if current == 0 and kind == 'experience' and self.baseline is not None:
+            return self.baseline._head(kind, note_id)
+        return current
+
     def _revision(self, kind, note_id, revision):
+        # A committed local topic owns its entire history. Never fill a missing
+        # local revision from a baseline that may have independently changed.
+        if (kind == 'experience' and self.baseline is not None
+                and self._local_head(kind, note_id) == 0
+                and revision <= self.baseline._head(kind, note_id)):
+            return self.baseline._revision(kind, note_id, revision)
         path = safe_path(self.root, kind, note_id, f'r{revision:04d}.md')
         try:
             markdown = self._bytes(path).decode('utf-8')
@@ -172,18 +188,43 @@ class NotesStore:
 
     def _ids(self, kind):
         folder = safe_path(self.root, kind)
-        if not folder.exists():
-            return []
         ids = []
         # Bounded scan, including incomplete creates; unknown children fail closed.
-        for item in folder.iterdir():
+        for item in folder.iterdir() if folder.exists() else ():
             self._identity(kind, item.name)
             if not item.is_dir():
                 raise NoteError('store_corrupt')
             ids.append(item.name)
             if len(ids) > LIMIT_NOTES:
                 raise NoteError('resource_limit')
+        if kind == 'experience' and self.baseline is not None:
+            ids = set(ids).union(self.baseline._ids(kind))
+            if len(ids) > LIMIT_NOTES:
+                raise NoteError('resource_limit')
         return sorted(ids)
+
+    def _fork_history(self, kind, note_id, current):
+        """Copy validated baseline history under the existing writer lock.
+
+        Commit the first local HEAD only with the requested new revision.
+        Interrupted copies remain reusable without overwriting old revisions.
+        """
+        if (kind != 'experience' or self.baseline is None or current == 0
+                or self._local_head(kind, note_id) != 0):
+            return
+        if self.baseline._head(kind, note_id) != current:
+            raise NoteError('revision_conflict')
+        for revision in range(1, current + 1):
+            row = self.baseline._revision(kind, note_id, revision)
+            data = render(row).encode('utf-8')
+            path = safe_path(self.root, kind, note_id, f'r{revision:04d}.md')
+            if path.exists():
+                if self._bytes(path) != data:
+                    raise NoteError('store_corrupt')
+            else:
+                self._atomic(path, data)
+        if self.baseline._head(kind, note_id) != current:
+            raise NoteError('revision_conflict')
 
     @staticmethod
     def _public(row, current):
@@ -270,6 +311,7 @@ class NotesStore:
                 raise NoteError('resource_limit')
             folder = self._identity(kind, note_id)
             make_dir(folder)
+            self._fork_history(kind, note_id, current)
             revision = current + 1
             path = safe_path(self.root, kind, note_id, f'r{revision:04d}.md')
             if path.exists():
@@ -298,7 +340,7 @@ class NotesStore:
 
 class NotesService:
     def __init__(self, settings):
-        self.store = NotesStore(settings.notes_dir)
+        self.store = NotesStore(settings.notes_dir, baseline_root=settings.baseline_notes_dir)
         self.audit = LocalAudit(settings)
 
     @staticmethod

@@ -11,8 +11,8 @@ using System.Windows.Forms;
 [assembly: AssemblyCompany("Balatro Agent contributors")]
 [assembly: AssemblyProduct("Balatro Agent")]
 [assembly: AssemblyCopyright("MIT, 2026 Balatro Agent contributors")]
-[assembly: AssemblyVersion("0.6.5.0")]
-[assembly: AssemblyFileVersion("0.6.5.0")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
 
 internal static class Launcher
 {
