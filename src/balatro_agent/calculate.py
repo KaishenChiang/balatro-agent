@@ -4,10 +4,10 @@ import statistics
 
 from .local_audit import LocalAudit
 
-ERRORS = {'invalid_input': '操作或显式数字输入不符合计算契约。',
-          'division_by_zero': '除数为零，未定义商。',
-          'resource_limit': '计算输入或结果超过资源限制。',
-          'internal_error': '计算未通过内部检查。'}
+ERRORS = {'invalid_input': 'The operation or explicit numeric input does not meet the calculation contract.',
+          'division_by_zero': 'Division by zero has no defined quotient.',
+          'resource_limit': 'Calculation input or result exceeds resource limits.',
+          'internal_error': 'Calculation failed its internal checks.'}
 OPERATIONS = ('sum', 'difference', 'product', 'quotient', 'mean', 'median',
               'variance_population', 'combination', 'hypergeometric')
 

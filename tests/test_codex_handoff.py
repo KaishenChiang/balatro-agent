@@ -50,11 +50,11 @@ def test_link_encodes_exact_project_and_short_prompt_without_sending(tmp_path, n
 @pytest.mark.parametrize('mode', ['supported', 'missing_protocol', 'failed_dispatch', 'missing_app'])
 def test_launcher_closes_after_project_dispatch_and_retains_fallback(tmp_path, mode):
     source = (ROOT / 'scripts/launcher.ps1').read_text(encoding='utf-8-sig')
-    begin = source.index('function Open-Codex')
+    begin = source.index('function Set-Detail')
     end = source.index('$ink =', begin)
     helper = tmp_path / 'dispatch.ps1'
     helper.write_text(source[begin:end], encoding='utf-8-sig')
-    command = '. ' + quote(helper) + ';'
+    command = '. ' + quote(ROOT / 'scripts/localization.ps1') + ";$script:language='zh-CN';. " + quote(helper) + ';'
     command += "$codexLink='codex://threads/new?path=encoded&prompt=encoded';$promptText='complete rules';"
     command += "$detail=[pscustomobject]@{Text=''};$script:desktopError='';$script:copied=$false;$script:requests=@();$script:refreshed=$false;$script:closed=$false;$script:events=@();"
     command += "$form=New-Object PSObject;Add-Member -InputObject $form -MemberType ScriptMethod -Name Close -Value {$script:closed=$true;$script:events+='close'};"
@@ -140,6 +140,7 @@ def test_actual_windows_selectors_refresh_prompt_and_link_without_game_or_dispat
     scripts=tmp_path/'scripts';scripts.mkdir()
     prompts=tmp_path/'prompts';prompts.mkdir()
     shutil.copyfile(ROOT/'scripts/codex_handoff.ps1',scripts/'codex_handoff.ps1')
+    shutil.copyfile(ROOT/'scripts/localization.ps1',scripts/'localization.ps1')
     for filename in ('first-use.md','bootstrap.md'):
         shutil.copyfile(ROOT/'prompts'/filename,prompts/filename)
     source=(ROOT/'scripts/launcher.ps1').read_text(encoding='utf-8-sig')
@@ -156,7 +157,7 @@ def test_actual_windows_selectors_refresh_prompt_and_link_without_game_or_dispat
     assert source.count(marker)==1
     source=source.replace(marker,output+marker)
     entry=scripts/'launcher.ps1';entry.write_text(source,encoding='utf-8-sig')
-    value=run_ps('& '+quote(entry)+' -Preview')
+    value=run_ps('& '+quote(entry)+' -Preview -Language zh-CN')
     assert value['defaults']=={'deck':'b_red','stake':'white'}
     assert value['deck']['Key']==deck and value['stake']['Key']==stake
     assert value['selectors_enabled'] and value['deck_count']==15 and value['stake_count']==10

@@ -14,17 +14,17 @@ from .compact import present, VIEWS
 from .polling import poll_delay
 
 ERRORS = {
-    "disconnected": "游戏读取接口未连接。",
-    "request_timeout": "读取请求超时；没有执行游戏动作。",
-    "invalid_response": "接口响应不符合协议；原始响应未导出。",
-    "adapter_error": "游戏只读适配器报告错误；原始错误未导出。",
-    "version_mismatch": "读取契约或固定版本不匹配。",
-    "unknown_profile": "无法确认游戏当前实际档位。",
-    "unsupported": "当前阶段、规则或 Mod 组合尚不支持。",
-    "invalid_timeout": "timeout_s 必须是 0–30 秒内的有限数值。",
-    "internal_error": "只读服务内部检查失败；未导出原始异常。",
-    "log_unavailable": "安全读取记录未能写入；本次观察未交付。",
-    "invalid_view": "view 仅支持 compact 或 full；没有读取或执行游戏动作。",
+    "disconnected": "The game reader is disconnected.",
+    "request_timeout": "The read request timed out; no game action was performed.",
+    "invalid_response": "The response does not match the protocol; the raw response was not exported.",
+    "adapter_error": "The read-only game adapter reported an error; the raw error was not exported.",
+    "version_mismatch": "The reader contract or pinned version does not match.",
+    "unknown_profile": "The actual current game profile cannot be confirmed.",
+    "unsupported": "The current phase, rules or Mod combination is unsupported.",
+    "invalid_timeout": "timeout_s must be a finite number between 0 and 30 seconds.",
+    "internal_error": "The read-only service failed internal checks; the raw exception was not exported.",
+    "log_unavailable": "The safe delivery record could not be written; this observation was not delivered.",
+    "invalid_view": "view must be compact or full; no game read or action was performed.",
 }
 
 

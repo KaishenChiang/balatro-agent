@@ -13,11 +13,11 @@ from bootstrap_sources import no_links, digest, unpack
 ROOT=Path(__file__).resolve().parents[1]
 TOP=['LICENSE','README.md','README.zh-CN.md','PROJECT.md','CHANGELOG.md','Balatro Agent.exe','pyproject.toml','uv.lock',
      '.gitattributes','.gitignore','.python-version','AGENTS.md']
-SCRIPTS=['setup.ps1','launcher.ps1','codex_handoff.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
+SCRIPTS=['setup.ps1','launcher.ps1','codex_handoff.ps1','localization.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
          'install_portable.py','update_mod.py','package_source.py','verify_source_candidate.py','verify_offline.py',
          'stdio_smoke.py','export_contract.py','check_notes_persistence.py',
          'audit_experience_mcp_evidence.py','client_evidence.py','project.py','analyze_timings.py']
-DOCS=['reference.md','maintenance.md','model-client.md','optimization.md',
+DOCS=['reference.md','maintenance.md','maintenance.en.md','model-client.md','model-client.en.md','english-support.md','optimization.md',
       'observation-schema.json','action-schema.json','notes-schema.json','calculation-schema.json','run-plan-schema.json']
 
 
@@ -112,7 +112,7 @@ def selected_files(root=ROOT, *, include_validation=True):
     selected += [root/'docs/balatro-ai'/name for name in DOCS]
     selected += [root/'config'/name for name in ('dependencies.lock.json','game-lifecycle.example.json',
                                                'mcp-client.example.json','startup-ui.example.json')]
-    selected += [root/'prompts'/name for name in ('bootstrap.md','first-use.md','mcp-evidence.js')]
+    selected += [root/'prompts'/name for name in ('bootstrap.md','bootstrap.en.md','first-use.md','first-use.en.md','mcp-evidence.js')]
     selected += [root/'experience/README.md']
     selected += [root/'third_party'/name for name in ('NOTICE.md','balatrobot-LICENSE.txt','lovely-LICENSE.md')]
     selected += [root/'third_party'/name for name in ('uv-LICENSE-MIT.txt','uv-LICENSE-APACHE.txt')]

@@ -19,16 +19,16 @@ LIMIT_RESPONSE_BYTES = 262144
 ID = re.compile(r'^(EXP|TEST)-[A-Z0-9][A-Z0-9-]{0,47}$')
 WRITE_ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$')
 ERRORS = {
-    'invalid_input': '笔记请求结构、编号、类型或文本不符合受限契约。',
-    'not_found': '指定笔记或修订不存在。',
-    'revision_conflict': '预期修订号与当前磁盘修订不一致。',
-    'id_conflict': '该写入ID已用于不同内容。',
-    'resource_limit': '笔记数量、历史或返回大小超过限制。',
-    'unsafe_path': '受控目录包含不允许的链接或路径结构。',
-    'store_corrupt': '笔记存储结构未通过完整性检查。',
-    'busy': '另一笔记写入正在进行或保留了锁；本次未提交。',
-    'storage_unavailable': '受控笔记存储不可用；本次未提交。',
-    'log_unavailable': '安全意图未能写入；本次未提交笔记。',
+    'invalid_input': 'The note request structure, ID, kind or text does not meet the bounded contract.',
+    'not_found': 'The requested note or revision does not exist.',
+    'revision_conflict': 'Expected revision differs from the current revision on disk.',
+    'id_conflict': 'This write ID already belongs to different content.',
+    'resource_limit': 'Note count, history or response size exceeds limits.',
+    'unsafe_path': 'The controlled directory contains an unsupported link or path structure.',
+    'store_corrupt': 'Note storage failed its integrity checks.',
+    'busy': 'Another note write is active or retains a lock; this request was not committed.',
+    'storage_unavailable': 'Controlled note storage is unavailable; this request was not committed.',
+    'log_unavailable': 'The safe intent could not be recorded; the note was not committed.',
 }
 
 

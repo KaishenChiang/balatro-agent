@@ -129,7 +129,7 @@ def test_desktop_failure_distinguishes_installed_packages_conflicts_and_actual_t
     start = source.index('function Get-PreparationFailureMessage')
     end = source.index('function Show-PreparationError', start)
     helper = tmp_path / 'classify.ps1'
-    helper.write_text(source[start:end] + '\nGet-PreparationFailureMessage ' + quote(text) + f' {stage}\n', encoding='utf-8-sig')
+    helper.write_text('. ' + quote(ROOT / 'scripts/localization.ps1') + '\n' + source[start:end] + '\nGet-PreparationFailureMessage ' + quote(text) + f' {stage}\n', encoding='utf-8-sig')
     result = subprocess.run([PS, '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(helper)], capture_output=True, timeout=20)
     assert result.returncode == 0
     # Redirected Windows PowerShell text uses the native Windows code page.

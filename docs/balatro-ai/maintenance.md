@@ -1,5 +1,7 @@
 # 安装、维护与恢复
 
+[English](maintenance.en.md) | 简体中文
+
 项目只有一个STDIO服务；游戏观察和操作通过MCP，维护脚本不替模型作策略决策。工具契约见[技术参考](reference.md)，验证范围见[PROJECT](../../PROJECT.md)。
 
 ## 首次安装
@@ -78,9 +80,9 @@ $env:UV_PYTHON_INSTALL_DIR = "$PWD/.tools/python"
 ## 源码交付
 
 ```powershell
-.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.1.0.json
-.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.1.0.json --output deliverables/github-ready-1.1.0
-.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.1.0.json
+.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.2.0.json
+.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.2.0.json --output deliverables/github-ready-1.2.0
+.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.2.0.json
 ```
 
 package要求本次源码检查、开发STDIO、内置固定发行包和最小Mod构建通过，源码哈希保持不变；不以历史游戏胜利作当前版本通过条件。它生成指定的deliverables/审核目录、deliverables/source/下的完整离线源码候选ZIP和逐文件清单，移除AGENTS中的本机操作者段落。自有EXE绑定可审查源码与构建收据，vendor只允许锁定的公开原始归档；不带本机运行环境、个人配置、游戏材料、存档、种子、TEST或备份。已有候选／review目录拒绝覆盖，先保全再重新构建。

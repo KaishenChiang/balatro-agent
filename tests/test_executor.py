@@ -397,9 +397,7 @@ def test_related_event_cancellation_keeps_unknown_and_busy(game):
     assert call('act_submit',request(game,'reroll',{},'other'))['reason']=='action_busy'
 
 
-@pytest.mark.parametrize('price', [0,5])
-def test_fixed_native_purchase_waits_even_while_reader_ready(game,price):
-    lua,call,tick=game
+def native_purchase_fixture(lua, price):
     src=(ROOT/'.artifacts/game-source/functions/button_callbacks.lua').read_text(encoding='utf-8')
     lua.execute(src[src.index('G.FUNCS.check_for_buy_space ='):src.index('  G.FUNCS.toggle_shop =')])
     lua.execute(f"""
@@ -416,6 +414,12 @@ def test_fixed_native_purchase_waits_even_while_reader_ready(game,price):
       TEST_PRODUCT.children.buy_button=ui_box({{}},{{TEST_BUY}})
       TEST_PRODUCT.children.buy_button.remove=function(self) self.removed=true end
     """)
+
+
+@pytest.mark.parametrize('price', [0,5])
+def test_fixed_native_purchase_waits_even_while_reader_ready(game,price):
+    lua,call,tick=game
+    native_purchase_fixture(lua, price)
     req=request(game,'buy',{'region':'shop_jokers','position':0})
     result=call('act_submit',req)
     assert result['state']=='RUNNING' and call('reader_snapshot')['public']['ready']

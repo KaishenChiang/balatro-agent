@@ -36,6 +36,8 @@ async def main():
     server = StdioServerParameters(command=sys.executable,args=[str(Path(__file__).resolve()),'--isolated-server'],cwd=ROOT,env=environment)
     async with Client(server) as client:
         tools = await client.list_tools()
+        # English-facing metadata must not require understanding Chinese prose.
+        assert all(tool.description and not any('\u4e00' <= ch <= '\u9fff' for ch in tool.description) for tool in tools.tools)
         assert {tool.name for tool in tools.tools} == {'health','observe','wait_until_ready','act','action_status','read_notes','write_note','run_plan','calculate','launch_game','close_game','recover_lost_session'}
         assert all(tool.annotations.read_only_hint == (tool.name not in ('act','write_note','run_plan','launch_game','close_game','recover_lost_session')) for tool in tools.tools)
         actions = next(tool for tool in tools.tools if tool.name == 'act').input_schema['properties']['action']['enum']

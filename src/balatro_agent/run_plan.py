@@ -12,19 +12,19 @@ from .local_audit import LocalAudit, canonical, make_dir, safe_path
 MAX_REVISIONS = 50
 MAX_FILE_BYTES = 160000
 MESSAGES = {
-    'invalid_input': '计划结构、大小或编号不符合契约。',
-    'run_scope_missing': '尚无当前会话已确认的新局或继续对局；不能复用旧局计划。',
-    'stale_observation': '计划必须绑定最近实际交付的当前局可操作观察。',
-    'action_pending': '未决动作或检查点故障时不能修订计划。',
-    'unread_experience': '计划引用的经验版本须先通过 content 或 full 实际读取。',
-    'revision_conflict': '预期计划修订与磁盘不一致。',
-    'id_conflict': '该写入ID已有不同计划内容。',
-    'resource_limit': '本局计划修订已达上限。',
-    'store_corrupt': '计划记录未通过完整性检查。',
-    'unsafe_path': '计划目录存在不允许的链接或路径结构。',
-    'busy': '另一个计划写入正在进行或保留了锁。',
-    'storage_unavailable': '本地计划存储不可用。',
-    'log_unavailable': '计划安全记录未能写入。',
+    'invalid_input': 'Plan structure, size or identifiers do not meet the contract.',
+    'run_scope_missing': 'No new or continued run has been confirmed in this session; an old plan cannot be reused.',
+    'stale_observation': 'The plan must bind the latest delivered, actionable observation of this run.',
+    'action_pending': 'A pending action or checkpoint fault prevents plan revisions.',
+    'unread_experience': 'Experience revisions referenced by a plan must first be fully read using content or full.',
+    'revision_conflict': 'Expected plan revision differs from the current revision on disk.',
+    'id_conflict': 'This write ID already belongs to different plan content.',
+    'resource_limit': 'The run has reached its plan revision limit.',
+    'store_corrupt': 'Plan storage failed its integrity checks.',
+    'unsafe_path': 'The plan directory contains an unsupported link or path structure.',
+    'busy': 'Another plan write is active or retains a lock.',
+    'storage_unavailable': 'Local plan storage is unavailable.',
+    'log_unavailable': 'The safe plan record could not be written.',
 }
 
 

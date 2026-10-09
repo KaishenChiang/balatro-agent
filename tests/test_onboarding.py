@@ -563,6 +563,7 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     (prompts / 'first-use.md').write_text('Read bootstrap and play. Report the result.', encoding='utf-8')
     (prompts / 'bootstrap.md').write_text('Synthetic public MCP rules.', encoding='utf-8')
     shutil.copyfile(ROOT / 'scripts/codex_handoff.ps1', scripts / 'codex_handoff.ps1')
+    shutil.copyfile(ROOT / 'scripts/localization.ps1', scripts / 'localization.ps1')
     interpreter = root / '.venv/Scripts/python.exe'; interpreter.parent.mkdir(parents=True)
     shutil.copyfile(sys.executable, interpreter)
     (root / '.venv/pyvenv.cfg').write_text(f'home = {sys.base_prefix}\ninclude-system-site-packages = false\n', encoding='utf-8')
@@ -592,7 +593,7 @@ def test_desktop_window_runs_helper_and_reaches_ready_with_matching_receipt(tmp_
     source = source.replace(marker, hook + marker)
     entry = scripts / 'launcher.ps1'; entry.write_text(source, encoding='utf-8-sig')
     environment = dict(os.environ); environment.pop('PYTHONPATH', None)
-    result = subprocess.run([PS, '-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', str(entry)],
+    result = subprocess.run([PS, '-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', str(entry), '-Language', 'zh-CN'],
         capture_output=True, text=True, errors='replace', timeout=30, env=environment)
     value = (root / 'window-result.txt').read_text(encoding='utf-8')
     if case == 'ready':
