@@ -12,8 +12,8 @@ using System.Windows.Forms;
 [assembly: AssemblyCompany("Balatro Agent contributors")]
 [assembly: AssemblyProduct("Balatro Agent")]
 [assembly: AssemblyCopyright("MIT, 2026 Balatro Agent contributors")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.2.0")]
+[assembly: AssemblyFileVersion("1.3.2.0")]
 
 internal static class Launcher
 {
@@ -51,7 +51,8 @@ internal static class Launcher
                 }
             }
             string root = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string script = Path.Combine(root, "scripts", "launcher.ps1");
+            bool monitor = Array.IndexOf(args, "--monitor") >= 0;
+            string script = Path.Combine(root, "scripts", monitor ? "activity_viewer.ps1" : "launcher.ps1");
             if (!File.Exists(script)) throw new FileNotFoundException(english ? "Extract the complete project folder, then open Balatro Agent.exe." : "请解压完整的项目目录，再打开 Balatro Agent.exe。");
             string arguments = "-NoProfile -NonInteractive -STA -ExecutionPolicy Bypass -File " + Quote(script);
             bool hasPreviewOptions = false;
@@ -59,6 +60,7 @@ internal static class Launcher
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--preview") arguments += " -Preview";
+                else if (args[i] == "--monitor") { }
                 else if ((args[i] == "--preview-state" || args[i] == "--preview-image") && i + 1 < args.Length)
                 {
                     hasPreviewOptions = true;

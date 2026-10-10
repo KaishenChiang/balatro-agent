@@ -43,7 +43,7 @@ class SessionRecovery:
         self.executor = executor
         self.reader = executor.reader
         self.root = executor.root / 'retired-sessions'
-        self.audit = LocalAudit(self.reader.settings)
+        self.audit = LocalAudit(self.reader.settings, activity=getattr(self.reader, 'activity', None))
 
     def _reply(self, response):
         return self.audit.deliver('recover_lost_session', response, write=True)

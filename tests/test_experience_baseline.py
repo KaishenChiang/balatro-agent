@@ -285,7 +285,7 @@ def test_shipped_baseline_contains_valid_complete_history_and_all_guides():
         for revision in range(1, row['revision'] + 1):
             assert store._revision('experience', row['note_id'], revision)['revision'] == revision
             count += 1
-    assert count == 54
+    assert count == 61
 
 
 def test_nested_baseline_and_local_roots_are_rejected_without_creating_files(tmp_path):

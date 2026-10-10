@@ -18,6 +18,8 @@ Back up and migrate `runs/local-experience/` separately. It contains personal re
 
 For a stopped/unresolved action, query its original ID and observe through MCP. Never replay an uncertain action or promote UNKNOWN to a loss. `recover_lost_session` is only for a confirmed lost old session under its contract. Normal wins/losses retain the game results window; closing the game requires a separate explicit request.
 
+The [activity viewer](activity.md) is separate from the preparation launcher. A new permitted MCP game launch requests it automatically; `Balatro Agent.exe --monitor` reopens it without installation. Closing it does not stop gameplay or discard records. The interface displays submitted rationale and plans; it cannot retrieve unsubmitted internal reasoning.
+
 ## Developer checks and source delivery
 
 `scripts/project.py` is the maintenance entry point. Use Python 3.13 with the project environment and `uv.lock`; the fixed sources and runtime manifest are under `config/`. From the project folder:
@@ -26,10 +28,10 @@ For a stopped/unresolved action, query its original ID and observe through MCP. 
 .venv/Scripts/python.exe scripts/project.py status
 .venv/Scripts/python.exe scripts/project.py build
 .venv/Scripts/python.exe scripts/project.py build-launcher
-.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.2.0.json
-.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.2.0.json --output deliverables/github-ready-1.2.0
-.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.2.0.json
-.venv/Scripts/python.exe scripts/project.py verify-offline --output runs/checks/offline-preparation-1.2.0.json
+.venv/Scripts/python.exe scripts/project.py check --source-only --output runs/checks/release-check-1.3.2.json
+.venv/Scripts/python.exe scripts/project.py package --check-report runs/checks/release-check-1.3.2.json --output deliverables/github-ready-1.3.2
+.venv/Scripts/python.exe scripts/project.py verify-package --output runs/checks/source-validation-1.3.2.json
+.venv/Scripts/python.exe scripts/project.py verify-offline --output runs/checks/offline-preparation-1.3.2.json
 ```
 
 Use new report/candidate paths; do not overwrite old evidence. Source-only checks do not update the game. Independent rebuilds and offline checks operate in fresh project-local directories and block real game transport. Private native-function fixtures are excluded from public source, and corresponding public tests skip when absent.

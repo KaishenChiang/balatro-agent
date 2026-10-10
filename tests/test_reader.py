@@ -219,6 +219,7 @@ async def test_malformed_hidden_identity_cannot_cause_error_side_channel(setting
     card=public_envelope['public']['regions'][0]['cards'][0]
     card['visibility']='face_down'
     reader=Reader(settings,client_for(settings,lambda req:reply(req,public_envelope)))
+    await reader.observe()  # Prime equal public history before both branches.
     before=await reader.observe()
     card.update(rank={'secret':'SECRET'},suit=100,name='SECRET'*1000,description={'secret':'SECRET'},sell_price={'secret':'SECRET'})
     after=await reader.observe()

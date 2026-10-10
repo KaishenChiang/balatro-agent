@@ -70,8 +70,8 @@ def calculate_explicit(operation, inputs):
 
 
 class Calculator:
-    def __init__(self, settings):
-        self.audit = LocalAudit(settings)
+    def __init__(self, settings, *, activity=None):
+        self.audit = LocalAudit(settings, activity=activity)
 
     def calculate(self, operation, inputs):
         try:

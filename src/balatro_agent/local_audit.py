@@ -38,10 +38,11 @@ def make_dir(path: Path) -> None:
 
 
 class LocalAudit:
-    def __init__(self, settings):
+    def __init__(self, settings, *, activity=None):
         self.root = settings.log_dir / 'local'
         self.context = settings.client_context
         self.name = 'local-' + uuid.uuid4().hex + '.jsonl'
+        self.activity = activity
 
     def record(self, tool, kind, value):
         make_dir(self.root)
@@ -52,6 +53,11 @@ class LocalAudit:
             stream.write(canonical(row) + '\n')
             stream.flush()
             os.fsync(stream.fileno())
+        if self.activity is not None and (kind == 'delivered' or kind == 'intent' and tool in ('launch_game', 'close_game')):
+            try:
+                self.activity.delivered(tool, value)
+            except Exception:
+                pass
 
     def deliver(self, tool, result, *, write=False):
         try:
@@ -60,5 +66,10 @@ class LocalAudit:
             response = {'status': 'log_unavailable', 'reason': '安全交付记录未能写入。', 'read_only': not write}
             if write:
                 response['write_state'] = 'UNKNOWN' if result.get('write_state') == 'COMMITTED' else 'NOT_COMMITTED'
+            if self.activity is not None:
+                try:
+                    self.activity.delivered(tool, response)
+                except Exception:
+                    pass
             return response
         return result

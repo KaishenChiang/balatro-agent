@@ -104,7 +104,9 @@ class GameLifecycle:
         self.reader, self.executor = reader, executor
         self.backend = backend or WindowsGame(reader.settings.lifecycle_file)
         self.journal = LifecycleJournal(reader.settings)
-        self.audit = LocalAudit(reader.settings)
+        self.audit = LocalAudit(reader.settings, activity=reader.activity)
+        self.activity_window = None
+        self.activity_operation_id = None
         self.poll_s = poll_s
 
     def blocks_actions(self):
@@ -116,11 +118,26 @@ class GameLifecycle:
     def _deliver(self, receipt, duplicate=False):
         result = receipt.model_dump()
         result['duplicate'] = duplicate
+        if (receipt.tool == 'launch_game' and not duplicate
+                and receipt.operation_id == self.activity_operation_id and self.activity_window is not None):
+            result['activity_window'] = self.activity_window
         try:
             self.audit.record(receipt.tool, 'delivered', result)
         except (OSError, ValueError):
             result.update(state='UNKNOWN' if receipt.submitted else 'REJECTED', reason='journal_unavailable')
+            self.reader.activity.delivered(receipt.tool, result)
         return result
+
+    def _show_activity(self, operation_id):
+        # Fake/development backends never open a desktop window.
+        if not isinstance(self.backend, WindowsGame):
+            return
+        self.activity_operation_id = operation_id
+        try:
+            from .activity import open_viewer
+            self.activity_window = open_viewer(self.reader.settings)
+        except Exception:
+            self.activity_window = 'unavailable'
 
     async def launch_game(self, operation_id, timeout_s=25.0):
         return await self._request('launch_game', operation_id, None, timeout_s)
@@ -232,6 +249,7 @@ class GameLifecycle:
                 record = Record(fingerprint=fingerprint, receipt=receipt)
                 if tool == 'launch_game' and process:
                     self.audit.record(tool, 'existing_window_intent', {'operation_id':operation_id})
+                    self._show_activity(operation_id)
                     receipt.state, receipt.reason, receipt.running = 'COMPLETED', 'already_running', True
                     receipt.mcp_connected = await self._connected()
                     receipt.focus = self._focus(process)
@@ -268,6 +286,7 @@ class GameLifecycle:
                 self.journal.set_pending(operation_id)
                 self.audit.record(tool, 'intent', receipt.model_dump())
                 if tool == 'launch_game':
+                    self._show_activity(operation_id)
                     self.backend.launch()
                 else:
                     self.backend.close(process)

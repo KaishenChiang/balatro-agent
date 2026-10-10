@@ -86,7 +86,7 @@ class RunPlans:
     def __init__(self, reader, executor, notes):
         self.reader, self.executor, self.notes = reader, executor, notes
         self.root = reader.settings.log_dir / 'run-plans'
-        self.audit = LocalAudit(reader.settings)
+        self.audit = LocalAudit(reader.settings, activity=getattr(reader, 'activity', None))
         self.scope = None
         self.cached = []
         self.progress = {}

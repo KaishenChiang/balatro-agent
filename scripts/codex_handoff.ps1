@@ -2,40 +2,6 @@
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'localization.ps1')
 
-function Get-BalatroPlayChoices {
-    # Original public catalogue only. Unlocks are checked by the model in-game.
-    $decks = @(
-        @{Key='b_red';Name='红色牌组';EnglishName='Red Deck'},
-        @{Key='b_blue';Name='蓝色牌组';EnglishName='Blue Deck'},
-        @{Key='b_yellow';Name='黄色牌组';EnglishName='Yellow Deck'},
-        @{Key='b_green';Name='绿色牌组';EnglishName='Green Deck'},
-        @{Key='b_black';Name='黑色牌组';EnglishName='Black Deck'},
-        @{Key='b_magic';Name='魔法牌组';EnglishName='Magic Deck'},
-        @{Key='b_nebula';Name='星云牌组';EnglishName='Nebula Deck'},
-        @{Key='b_ghost';Name='幽灵牌组';EnglishName='Ghost Deck'},
-        @{Key='b_abandoned';Name='废弃牌组';EnglishName='Abandoned Deck'},
-        @{Key='b_checkered';Name='方格牌组';EnglishName='Checkered Deck'},
-        @{Key='b_zodiac';Name='黄道牌组';EnglishName='Zodiac Deck'},
-        @{Key='b_painted';Name='彩绘牌组';EnglishName='Painted Deck'},
-        @{Key='b_anaglyph';Name='浮雕牌组';EnglishName='Anaglyph Deck'},
-        @{Key='b_plasma';Name='等离子牌组';EnglishName='Plasma Deck'},
-        @{Key='b_erratic';Name='古怪牌组';EnglishName='Erratic Deck'}
-    ) | ForEach-Object { [pscustomobject]$_ }
-    $stakes = @(
-        @{Key='white';Name='白注';EnglishName='White Stake'},
-        @{Key='red';Name='红注';EnglishName='Red Stake'},
-        @{Key='green';Name='绿注';EnglishName='Green Stake'},
-        @{Key='black';Name='黑注';EnglishName='Black Stake'},
-        @{Key='blue';Name='蓝注';EnglishName='Blue Stake'},
-        @{Key='purple';Name='紫注';EnglishName='Purple Stake'},
-        @{Key='orange';Name='橙注';EnglishName='Orange Stake'},
-        @{Key='gold';Name='金注';EnglishName='Gold Stake'},
-        @{Key='highest';Name='最高注级';EnglishName='Highest unlocked stake'},
-        @{Key='climb';Name='爬塔模式';EnglishName='Stake climb'}
-    ) | ForEach-Object { [pscustomobject]$_ }
-    return [pscustomobject]@{Decks=@($decks);Stakes=@($stakes)}
-}
-
 function Get-BalatroPlayPrompt([string]$ProjectRoot, [switch]$InlineRules,
         [string]$DeckKey = 'b_red', [string]$StakeChoice = 'white',
         [ValidateSet('en','zh-CN')][string]$Language = 'zh-CN') {

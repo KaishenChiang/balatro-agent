@@ -6,6 +6,8 @@
 
 observe、wait_until_ready、act、action_status的MCP参数view默认compact，full返回传统结构。compact只在较长同字段对象数组按列编码后更小时采用，反馈标记observation_encoding="columns-v1"。{$columns:[字段],$rows:[[值]]}按列一一对应原对象，可无损还原后按观察Schema解释；行号不是position，异字段对象不补null或合并。白名单过滤、背面/石头牌遮蔽、未知值与observation_id在展示压缩前确定。展示视图不参与动作去重身份，非法view在游戏读取/提交前拒绝；交付日志保留实际格式，内部确认继续使用完整白名单对象。
 
+health声明public_changes_protocol="public-changes-v1"时，工具反馈可带顶层public_changes，以成功记录并实际交付的公开观察比较变化，完整观察保留。changed/unchanged/unknown只描述公开字段，不证明动作完成或授权继续UNKNOWN。历史收据不推进当前计划／观察／窗口目标，日志失败清除比较基线。详见[双语比较契约](public-changes.md)与[状态窗口](activity.md)。
+
 ## 观察与可见性
 
 observe对应游戏原生love.update处理后，更新线程内的一次公开快照。Lua先做玩家信息投影，Python再按嵌套白名单严格校验与遮蔽；不拼接多次原始状态。health／observe／wait_until_ready均只读，可识别1–3任一实际档位；未知实际档位明确报错。0.6.2以current-native-v1策略直接使用当前档位，不依赖人工登记。动作从实际交付的观察取得档位，提交处连续核对档位和observation_id；执行中档位变化保持UNKNOWN。旧登记和证据保留。
@@ -116,7 +118,7 @@ write_note(note_id, content, expected_revision, write_id, kind="experience")创�
 
 write_note的MCP返回也默认view="content"，可用full取Markdown；展示视图不进入写入去重身份，不改变持久化及读回要求。
 
-正式基线目录experience/experience/只读；个人修订目录runs/local-experience/experience/优先读取，TEST独立且不继承基线。首次修订将该主题全部已验证基线历史复制到本地，再追加新版本并提交本地HEAD；部分复制失败保留文件，无本地HEAD时仍读基线，同请求可恢复，已有修订不得覆盖。源码升级后已修订主题只读自己的完整历史，不自动拼接新基线；未修订主题跟随基线。本地经验不上传、提交或反写源码。
+正式基线目录experience/experience/只读；个人修订目录runs/local-experience/experience/优先读取，TEST独立且不继承基线。首次修订将该主题全部已验证基线历史复制到本地，再追加新版本并提交本地HEAD；部分复制失败保留文件，无本地HEAD时仍读基线，同请求可恢复，已有修订不得覆盖。源码升级后已修订主题只读自己的完整历史，不自动拼接新基线；未修订主题跟随基线。日常本地经验不自动上传、提交或反写源码；用户明确授权共享时，开发维护阶段单独核对来源、完整历史和分支冲突，再整理公开基线。
 
 r0001.md等为不可变完整版本，HEAD.json是原子提交指针。先fsync版本再原子更新HEAD，保留历史；同写ID同内容恢复，异内容拒绝。禁止穿越、绝对路径、符号链接／联接、reparse点、设备或流名称；残留跨进程锁报busy，不自动删除。写入后实际读回，独立进程验证full与content视图的完整内容和修订身份。写入前health须实际声明primary_experience_note="EXP-GENERAL-GUIDE"、notes_policy="local-over-baseline-v1"、notes_write_scope="local_only"；缺标记先重载并重新核验，不向旧服务写入。跨构筑规则更新主攻略，特定技巧保持对应主题简短，无新认识不强行创建逐局流水账。
 

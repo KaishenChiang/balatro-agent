@@ -487,8 +487,8 @@ def test_missing_game_stops_before_bootstrap_download(tmp_path):
     assert '1/4' not in result.stdout
 
 
-@pytest.mark.parametrize('reuse_exit', [0, 1, 2])
-def test_automatic_bootstrap_orchestrates_one_prepare_and_reuses_early(tmp_path, reuse_exit):
+@pytest.mark.parametrize('reuse_exit,game_running', [(0,False),(1,False),(2,False),(2,True)])
+def test_automatic_bootstrap_orchestrates_one_prepare_and_reuses_early(tmp_path, reuse_exit,game_running):
     if not PS: pytest.skip('Windows PowerShell')
     root = tmp_path / '中文 project & bang!'; scripts = root / 'scripts'; scripts.mkdir(parents=True)
     steam = tmp_path / 'Steam'; steam.mkdir(); (steam / 'steam.exe').write_bytes(b'fake')
@@ -512,6 +512,10 @@ def test_automatic_bootstrap_orchestrates_one_prepare_and_reuses_early(tmp_path,
     # mode selection and automatic pipeline, with exact commands recorded.
     marker = "$scopedVariables = @('UV_PYTHON_INSTALL_DIR'"
     overrides = "function Install-LockedUv { return 'fixture-uv' }\n"
+    # Never inspect a user's live process from this synthetic installer copy.
+    # Also cover the real guard with a fake running-game result.
+    process_result="[pscustomobject]@{ProcessName='Balatro'}" if game_running else '@()'
+    overrides += "function Get-Process { [CmdletBinding()]param([string]$Name) "+process_result+" }\n"
     overrides += "function Invoke-Checked([string]$Program,[string[]]$Arguments) { $Arguments | ConvertTo-Json -Compress | Add-Content -LiteralPath (Join-Path $PSScriptRoot '../requests.jsonl') -Encoding UTF8 }\n"
     assert marker in source
     source = source.replace(marker, overrides + marker, 1)
@@ -527,6 +531,9 @@ def test_automatic_bootstrap_orchestrates_one_prepare_and_reuses_early(tmp_path,
         assert result.returncode == 1 and not (root / 'requests.jsonl').exists()
     elif reuse_exit == 0:
         assert result.returncode == 0 and not (root / 'requests.jsonl').exists()
+    elif game_running:
+        assert result.returncode == 1 and 'Close Balatro normally' in result.stderr
+        assert not (root / 'requests.jsonl').exists()
     else:
         assert result.returncode == 0, result.stderr
         calls = [json.loads(row) for row in (root / 'requests.jsonl').read_text(encoding='utf-8-sig').splitlines()]

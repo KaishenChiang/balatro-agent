@@ -4,7 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 Let a tool-capable AI play the Steam edition of **Balatro** through a local MCP server. The model makes the decisions; the program reads player-visible information, performs native actions, confirms their results, and stores reusable experience.
 
-**Version 1.2.0 · Windows x64 / Steam / Codex.** The default is one unseeded run with the Red Deck at White Stake. Other original decks, all eight stakes, highest unlocked stake, and a climb mode are available.
+**Version 1.3.2 · Windows x64 / Steam / Codex.** The default is one unseeded run with the Red Deck at White Stake. Other original decks, all eight stakes, highest unlocked stake, and a climb mode are available.
 
 ## Download and play
 
@@ -16,6 +16,10 @@ Let a tool-capable AI play the Steam edition of **Balatro** through a local MCP 
 The launcher automatically uses Chinese on a Chinese Windows display language and English otherwise. Use **Language / 语言** to switch at any time; deck/stake choices and preparation state are retained. Both handoff paths use your selected language. This does not change Balatro's language: the same MCP reads native localized text and acts through native controls in either Chinese or English. See [English support](docs/balatro-ai/english-support.md). If Codex cannot see the tools after setup, reload MCP using the client's available controls or reopen Codex before sending the prompt. “Ready” confirms preparation, not that an existing chat has loaded the service. A path in a prompt does not change an existing chat's working directory or file permissions. A browser-only chat cannot directly control the local game.
 
 Codex starts and manages MCP independently, so gameplay continues after the launcher closes. You can also close the launcher manually after copying the prompt; keep the project folder. The full download bundles the fixed tools, Python, dependencies, and Mods for offline preparation. Steam, the game, and client sign-in remain prerequisites. Advanced setup and recovery are covered in the [maintenance guide](docs/balatro-ai/maintenance.en.md).
+
+## Live play activity
+
+A new permitted MCP `launch_game` request opens an independent bilingual activity window. Its concise timeline uses **HH:mm:ss** and shows stage changes, short submitted decisions, plan updates, executed actions, and experience saves. Card inventories, tool names, internal IDs and repeated polls stay out of the timeline. Unconfirmed results remain clearly labelled; current execution appears above the timeline. You may close the window without interrupting gameplay and reopen it with `Balatro Agent.exe --monitor`. Identical launch queries do not reopen it. The selected language also controls deck/stake names and the model's short bilingual summaries. Older free text without a matching summary uses a localized operation and a clear unavailable-summary notice; its original stays in the records. Complete records stay local. The window displays submitted rationale and plans; it cannot read unsubmitted internal reasoning. See [how it works and its measured overhead](docs/balatro-ai/activity.md). The [public changes hint](docs/balatro-ai/public-changes.md) and full observations remain available to the model.
 
 ## Decks and stakes
 
@@ -35,13 +39,13 @@ Each completed run returns a brief report: **actual deck / stake · win or loss 
 
 After a single run or a completed climb, the game stays on the results screen with its window open. Closing the game requires a separate explicit request. An authorized climb continues through native menus after each report.
 
-The source includes a [general guide and 11 short topics](experience/README.md), with all **54 revisions** preserved. New experience is written only to `runs/local-experience/` and takes precedence over the read-only baseline. It is not uploaded or committed. Back up and migrate that folder separately when moving projects. Notes affect available context, not model parameters.
+The source includes a [general guide and 11 short topics](experience/README.md), with all **61 revisions** preserved. New experience is written only to `runs/local-experience/` and takes precedence over the read-only baseline. Local revisions are not published automatically. Explicitly requested, reviewed updates can be incorporated into the shared baseline; the [experience index](experience/README.md) records the 2026-10-09/10 import and its preserved source notes. Back up and migrate that folder separately when moving projects. Notes affect available context, not model parameters.
 
 The context optimizations introduced in 1.1.0 add literal note search, a small model-authored run plan, lossless compact observations, and shorter early status polling. Full views remain available; native completion and hidden-information protections stay in place. Plans keep their revision history, reject uncertain continuity after reconnecting, and isolate storage faults from game results. Historical action queries do not rewind the current observation. The known 11-tool configuration from 1.0.x upgrades to 12 tools after installation, closed-game, and idle checks. See the [optimization details](docs/balatro-ai/optimization.md) for design and evidence. Smaller responses have been measured; whole-run speed and stable win rates have not been established.
 
 ## Verification and project layout
 
-Historical live evidence covers Windows / Steam / Codex; the latest complete live runs used **0.6.1**. Current source checks, development MCP, rebuilds, and offline preparation are recorded separately in [PROJECT](PROJECT.md) and [validation evidence](evidence/README.md). A complete 1.2.0 live run in an English Steam game, real climb and unlock branches, actual Codex project-link behavior, and first use on another computer remain unverified. Historical results do not establish stable win rates or model rankings.
+Historical live evidence covers Windows / Steam / Codex; the latest complete live runs used **0.6.1**. Current source checks, development MCP, rebuilds, and offline preparation are recorded separately in [PROJECT](PROJECT.md) and [validation evidence](evidence/README.md). A complete 1.3.2 live run in an English Steam game, real climb and unlock branches, actual Codex project-link behavior, and first use on another computer remain unverified. Historical results do not establish stable win rates or model rankings.
 
 [Play rules](prompts/bootstrap.en.md) · [First-use prompt](prompts/first-use.en.md) · [Technical contract](docs/balatro-ai/reference.md) · [Client configuration](docs/balatro-ai/model-client.en.md) · [Changelog](CHANGELOG.md). Play, setup and recovery guides are available in English; the full technical reference, project history and historical experience retain their original Chinese text. The redundant CMD launchers were removed; the EXE is the desktop entry.
 

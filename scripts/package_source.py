@@ -13,11 +13,11 @@ from bootstrap_sources import no_links, digest, unpack
 ROOT=Path(__file__).resolve().parents[1]
 TOP=['LICENSE','README.md','README.zh-CN.md','PROJECT.md','CHANGELOG.md','Balatro Agent.exe','pyproject.toml','uv.lock',
      '.gitattributes','.gitignore','.python-version','AGENTS.md']
-SCRIPTS=['setup.ps1','launcher.ps1','codex_handoff.ps1','localization.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
+SCRIPTS=['setup.ps1','launcher.ps1','activity_viewer.ps1','codex_handoff.ps1','localization.ps1','build_launcher.ps1','onboarding.py','bootstrap_sources.py','build_mod.py','startup_display.py',
          'install_portable.py','update_mod.py','package_source.py','verify_source_candidate.py','verify_offline.py',
          'stdio_smoke.py','export_contract.py','check_notes_persistence.py',
          'audit_experience_mcp_evidence.py','client_evidence.py','project.py','analyze_timings.py']
-DOCS=['reference.md','maintenance.md','maintenance.en.md','model-client.md','model-client.en.md','english-support.md','optimization.md',
+DOCS=['reference.md','maintenance.md','maintenance.en.md','model-client.md','model-client.en.md','english-support.md','activity.md','public-changes.md','optimization.md',
       'observation-schema.json','action-schema.json','notes-schema.json','calculation-schema.json','run-plan-schema.json']
 
 

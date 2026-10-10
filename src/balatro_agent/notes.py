@@ -363,9 +363,9 @@ class NotesStore:
 
 
 class NotesService:
-    def __init__(self, settings):
+    def __init__(self, settings, *, activity=None):
         self.store = NotesStore(settings.notes_dir, baseline_root=settings.baseline_notes_dir)
-        self.audit = LocalAudit(settings)
+        self.audit = LocalAudit(settings, activity=activity)
         self.read_refs = set()
 
     @staticmethod

@@ -12,6 +12,7 @@ from .settings import Settings
 from .transport import GameClient, ReaderError
 from .compact import present, VIEWS
 from .polling import poll_delay
+from .public_changes import PublicChanges, PROTOCOL as CHANGES_PROTOCOL
 
 ERRORS = {
     "disconnected": "The game reader is disconnected.",
@@ -37,6 +38,9 @@ def error_result(code: str) -> dict:
 class Reader:
     def __init__(self, settings: Settings | None = None, client: GameClient | None = None):
         self.settings = settings or Settings.runtime()
+        from .activity import ActivityJournal
+        self.activity = ActivityJournal(self.settings)
+        self.public_changes = PublicChanges()
         self.client = client or GameClient(self.settings.url, self.settings.request_timeout_s)
         self._log_file = self.settings.log_dir / ("reader-" + uuid.uuid4().hex + ".jsonl")
         self._tool_lock = asyncio.Lock()
@@ -113,17 +117,27 @@ class Reader:
             sampled = datetime.now(timezone.utc)
             result = {**result, "server_time": {"utc": sampled.isoformat(), "unix_s": sampled.timestamp()}}
         observation = result.get('observation')
-        if self.plans is not None:
+        prepared = self.public_changes.prepare(result)
+        result = prepared.result
+        historical = result.get('public_changes', {}).get('reason', '').startswith('historical_')
+        if self.plans is not None and not historical:
             result = self.plans.attach(result)
+        elif self.plans is not None:
+            result = {**result, 'run_plan_status': 'stale_observation'}
         result = present(result, view)
         try:
             self._record_delivered(tool, result)
         except OSError:
+            self.public_changes.reset()
             # Filesystem error messages may include arbitrary path contents.
             # Fail closed rather than hand back an unrecorded observation.
-            return error_result("log_unavailable")
-        if observation is not None:
+            failure = error_result("log_unavailable")
+            self.activity.delivered(tool, failure)
+            return failure
+        self.public_changes.commit(prepared)
+        if observation is not None and not historical:
             self.remember_observation(observation)
+        self.activity.delivered(tool, result)
         return result
 
     async def health(self) -> dict:
@@ -132,6 +146,7 @@ class Reader:
                 data = await self._envelope("health")
                 result = {"status": "ok", "connected": True, "read_only": True,
                           "schema_version": SCHEMA_VERSION, "adapter_version": ADAPTER_VERSION,
+                          "public_changes_protocol": CHANGES_PROTOCOL,
                           "upstream_commit": UPSTREAM_COMMIT, "upstream_release": "1.5.2",
                           "upstream_mod_version": "1.5.1", "game_version": data.game_version,
                           "actual_profile": data.profile, "profile_policy": "current-native-v1",

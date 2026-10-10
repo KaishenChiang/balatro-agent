@@ -23,6 +23,9 @@ def rejection(reason, action_id=None):
 class Executor:
     def __init__(self, reader: Reader, *, wait_s: float = 20):
         self.reader = reader
+        if not hasattr(reader, 'activity'):
+            from .activity import ActivityJournal
+            reader.activity = ActivityJournal(reader.settings)
         self.wait_s = wait_s
         self.root = reader.settings.log_dir / 'executor'
         self.checkpoint = self.root / 'checkpoint.json'
@@ -121,15 +124,27 @@ class Executor:
 
     def _deliver(self, tool, result, *, restore_request=None, restore_input=False, view='full'):
         observation = result.get('observation')
+        changes = getattr(self.reader, 'public_changes', None)
+        prepared = changes.prepare(result, restore_request,
+            historical=(tool == 'action_status' and restore_request is None)) if changes is not None else None
+        if prepared is not None:
+            result = prepared.result
+        historical = result.get('public_changes', {}).get('reason', '').startswith('historical_')
         plans = getattr(self.reader, 'plans', None)
-        if plans is not None:
+        if plans is not None and not historical:
             result = plans.attach(result, restore_request)
+        elif plans is not None:
+            result = {**result, 'run_plan_status': 'stale_observation'}
         result = present(result, view)
         try:
             self._record('delivered_'+tool, result)
         except OSError:
+            if changes is not None:
+                changes.reset()
             if result.get('submitted') is False:
-                return {**rejection('log_unavailable', result.get('action_id')), 'read_only': result.get('read_only', False)}
+                failure = {**rejection('log_unavailable', result.get('action_id')), 'read_only': result.get('read_only', False)}
+                self.reader.activity.delivered(tool, failure)
+                return failure
             recovery = restore_request or self.last_request
             if recovery and result.get('action_id') == recovery['action_id']:
                 if restore_input or (self.pending and recovery['action_id'] != self.pending['action_id']):
@@ -140,10 +155,15 @@ class Executor:
                     self._save()
                 except OSError:
                     self.checkpoint_broken = True
-            return {**self._unknown(result, 'log_unavailable'), 'submitted': result.get('submitted'),
-                    'read_only': result.get('read_only', False)}
-        if observation is not None:
+            failure = {**self._unknown(result, 'log_unavailable'), 'submitted': result.get('submitted'),
+                       'read_only': result.get('read_only', False)}
+            self.reader.activity.delivered(tool, failure)
+            return failure
+        if prepared is not None:
+            changes.commit(prepared)
+        if observation is not None and not historical:
             self.reader.remember_observation(observation)
+        self.reader.activity.delivered(tool, result)
         return result
 
     async def _query(self, action_id):
@@ -227,6 +247,7 @@ class Executor:
                     self.pending = None
                 self.checkpoint_broken = True
                 return self._deliver('act', rejection('journal_unavailable', req['action_id']))
+            self.reader.activity.intent(req)
             try:
                 transport_wait_ms, poll_count = 0.0, 0
                 transport_started = time.perf_counter()
@@ -241,6 +262,8 @@ class Executor:
                     raise ValueError('invalid_response')
                 if continuation and result['state'] != 'REJECTED' and result.get('input_for_action_id') != self.pending['action_id']:
                     raise ValueError('invalid_response')
+                if result['state'] == 'RUNNING':
+                    self.reader.activity.progress('act', result)
                 deadline = time.monotonic() + self.wait_s
                 while result['state'] == 'RUNNING' and time.monotonic() < deadline:
                     await asyncio.sleep(min(poll_delay(poll_count, self.reader.settings.poll_interval_s),
